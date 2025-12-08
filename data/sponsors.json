@@ -1,0 +1,20 @@
+[
+  {
+    "name": "企業A",
+    "category": "IT",
+    "location": "東京",
+    "note": "AI系スタートアップ。協賛実績あり。"
+  },
+  {
+    "name": "企業B",
+    "category": "食品",
+    "location": "大阪",
+    "note": "地元イベントのスポンサー経験あり。"
+  },
+  {
+    "name": "企業C",
+    "category": "エンタメ",
+    "location": "福岡",
+    "note": "音楽系プロジェクト歓迎。"
+  }
+]
