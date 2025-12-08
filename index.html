@@ -7,8 +7,16 @@
 <body>
   <h1>スポンサー検索サイト（β）</h1>
 
-  <input type="text" id="keyword" placeholder="キーワード検索">
-  <button onclick="search()">検索</button>
+<input type="text" id="keyword" placeholder="キーワード検索">
+　
+<select id="category">
+  <option value="">すべてのカテゴリー</option>
+  <option value="IT">IT</option>
+  <option value="食品">食品</option>
+  <option value="エンタメ">エンタメ</option>
+</select>
+  
+<button onclick="search()">検索</button>
 
   <ul id="result"></ul>
 
@@ -20,23 +28,31 @@
   }
 
   async function search() {
-    const kw = document.getElementById("keyword").value;
-    const sponsors = await loadSponsors();
+  const kw = document.getElementById("keyword").value;
+  const selectedCategory = document.getElementById("category").value;
+  const sponsors = await loadSponsors();
 
-    const result = sponsors.filter(s => 
+  const result = sponsors.filter(s => {
+    const keywordMatch =
+      kw === "" ||
       s.name.includes(kw) ||
       s.category.includes(kw) ||
       s.location.includes(kw) ||
-      s.note.includes(kw)
-    );
+      s.note.includes(kw);
 
-    document.getElementById("result").innerHTML =
-      result.length === 0
-        ? "<li>該当なし</li>"
-        : result.map(r => 
-            `<li>${r.name}（${r.category}/${r.location}） - ${r.note}</li>`
-          ).join("");
-  }
+    const categoryMatch =
+      selectedCategory === "" || s.category === selectedCategory;
+
+    return keywordMatch && categoryMatch;
+  });
+
+  document.getElementById("result").innerHTML =
+    result.length === 0
+      ? "<li>該当なし</li>"
+      : result.map(r =>
+          `<li>${r.name}（${r.category}/${r.location}） - ${r.note}</li>`
+        ).join("");
+}
 </script>
 </body>
 </html>
