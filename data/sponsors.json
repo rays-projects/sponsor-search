@@ -1,32 +1,18 @@
 [
   {
-    "name": "企業A",
-    "category": "IT",
-    "location": "東京",
-    "note": "AI系スタートアップ。協賛実績あり。",
-    "url": "https://example-a.com",
-    "logo": "https://via.placeholder.com/256x256.png?text=A",
-    "budget": "10万〜30万円",
-    "tags": ["AI","スタートアップ"]
-  },
-  {
-    "name": "企業B",
-    "category": "食品",
-    "location": "大阪",
-    "note": "地元イベントのスポンサー経験あり。",
-    "url": "https://example-b.com",
-    "logo": "https://via.placeholder.com/256x256.png?text=B",
-    "budget": "5万〜20万円",
-    "tags": ["食品","地域"]
-  },
-  {
-    "name": "企業C",
-    "category": "エンタメ",
-    "location": "福岡",
-    "note": "音楽系プロジェクト歓迎。",
-    "url": "https://example-c.com",
-    "logo": "https://via.placeholder.com/256x256.png?text=C",
-    "budget": "20万〜50万円",
-    "tags": ["音楽","イベント"]
+    "program": "世界丸見え！テレビ特捜部",
+    "network": "日本テレビ",
+    "production": "日本テレビ",
+    "day": "月曜",
+    "time": "20:00-21:00",
+    "period": "2023年4月〜",
+    "genre": "バラエティ",
+    "sponsor_type": "通常提供",
+    "sponsors": [
+      "P&G",
+      "アサヒ飲料",
+      "KDDI"
+    ],
+    "notes": "改編時に提供変更あり"
   }
 ]

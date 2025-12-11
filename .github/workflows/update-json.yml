@@ -1,0 +1,26 @@
+name: Update sponsors.json from Google Drive
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *"  # 毎日18:00 UTC（日本時間3:00）実行
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download JSON from Google Drive
+        run: |
+          curl -L -o data/sponsors.json "https://drive.google.com/uc?export=download&id=1r0jf_GsccSQAc-F6SIFFmVd3X_fgb6u9"
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add data/sponsors.json
+          git commit -m "Auto-update sponsors.json" || echo "No changes to commit"
+          git push
