@@ -1,160 +1,131 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>スポンサー検索</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>スポンサー検索サイト（β）</title>
+
   <style>
-    /* ===== ベーシックなリセット＆レイアウト ===== */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 16px; color:#111; background:#fff; }
-    h1 { font-size:28px; margin:0 0 18px 0; }
-    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
-    input[type="text"], select { padding:6px 8px; border:1px solid #ccc; border-radius:4px; min-width:160px; }
-    button { padding:6px 10px; border:1px solid #888; background:#f6f6f6; border-radius:4px; cursor:pointer; }
-    button:hover { background:#eee; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f8f8f8;
+    }
 
-    /* ===== 検索結果のカード表示 ===== */
-    #result { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:14px; list-style:none; padding:0; margin:0; }
-    .card { border:1px solid #e6e6e6; border-radius:10px; padding:12px; display:flex; gap:12px; align-items:flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.03); background:#fff; }
-    .logo { width:64px; height:64px; flex:0 0 64px; border-radius:6px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-    .logo img { width:100%; height:100%; object-fit:cover; display:block; }
-    .meta { flex:1; }
-    .meta h3 { margin:0 0 6px 0; font-size:16px; }
-    .meta p { margin:0; font-size:13px; color:#444; line-height:1.4; }
-    .tags { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
-    .tag { font-size:12px; padding:4px 6px; border-radius:6px; background:#f2f2f2; color:#333; }
-    .muted { color:#777; font-size:12px; }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-    /* ===== 空状態メッセージ ===== */
-    .empty { color:#666; font-size:15px; padding:18px 0; }
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
 
-    /* ===== モバイル調整 ===== */
-    @media (max-width:520px){
-      .controls { flex-direction:column; align-items:stretch; }
-      input[type="text"], select, button { width:100%; }
-      #result { grid-template-columns: 1fr; }
+    input, select {
+      padding: 8px;
+      font-size: 15px;
+      width: 100%;
+    }
+
+    button {
+      padding: 8px 15px;
+      background: #0078ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #005ec7;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: white;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
   </style>
 </head>
+
 <body>
+
   <h1>スポンサー検索サイト（β）</h1>
 
-  <div class="controls">
-    <input type="text" id="keyword" placeholder="キーワード検索（企業名・メモなど）" />
-    <select id="category"><option value="">すべてのカテゴリー</option></select>
-    <select id="location"><option value="">すべての地域</option></select>
-    <button id="searchBtn">検索</button>
-    <button id="clearBtn" title="フィルタをリセット">リセット</button>
+  <div class="search-box">
+    <input type="text" id="keyword" placeholder="キーワード検索">
+    <select id="category">
+      <option value="">すべてのカテゴリー</option>
+      <option value="IT">IT</option>
+      <option value="食品">食品</option>
+      <option value="エンタメ">エンタメ</option>
+    </select>
+    <button onclick="search()">検索</button>
   </div>
 
   <ul id="result"></ul>
 
   <script>
-    // キャッシュ
-    let cachedSponsors = null;
-
     async function loadSponsors() {
-      if (cachedSponsors) return cachedSponsors;
-      const res = await fetch("./data/sponsors.json", { cache: "no-store" });
-      const sponsors = await res.json();
-      cachedSponsors = sponsors;
-      return sponsors;
-    }
-
-    function renderResults(list) {
-      const container = document.getElementById("result");
-      if (!list || list.length === 0) {
-        container.innerHTML = '<div class="empty">該当するスポンサーが見つかりませんでした。</div>';
-        return;
+      try {
+        const res = await fetch("./data/sponsors.json");
+        if (!res.ok) {
+          throw new Error("JSON の読み込みに失敗しました");
+        }
+        const sponsors = await res.json();
+        return sponsors;
+      } catch (e) {
+        console.error(e);
+        return [];
       }
-      container.innerHTML = list.map(s => {
-        const logo = s.logo || "";
-        const logoHtml = logo ? `<div class="logo"><img src="${logo}" alt="${escapeHtml(s.name)} logo" onerror="this.style.display=\'none\'" /></div>` : `<div class="logo"><div class="muted">No<br>Logo</div></div>`;
-        const budget = s.budget ? `<span class="tag">予算: ${escapeHtml(s.budget)}</span>` : "";
-        const link = s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.url)}</a>` : "";
-        return `<li class="card">
-          ${logoHtml}
-          <div class="meta">
-            <h3>${escapeHtml(s.name)}</h3>
-            <p class="muted">${escapeHtml(s.category)} / ${escapeHtml(s.location)} ${budget ? "<br/>" + budget : ""}</p>
-            <p>${escapeHtml(s.note)}${s.url ? "<br/>" + link : ""}</p>
-            <div class="tags">
-              ${s.tags ? s.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("") : ""}
-            </div>
-          </div>
-        </li>`;
-      }).join("");
-    }
-
-    // シンプルな HTML エスケープ（最低限）
-    function escapeHtml(str){ if(!str && str!==0) return ""; return String(str).replace(/[&<>"'`]/g, (s)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;' })[s]); }
-
-    function unique(values){
-      return Array.from(new Set(values)).filter(Boolean);
-    }
-
-    async function generateFilters() {
-      const sponsors = await loadSponsors();
-      const categories = unique(sponsors.map(s=>s.category)).sort();
-      const locations = unique(sponsors.map(s=>s.location)).sort();
-
-      const catSel = document.getElementById("category");
-      // まず既存以外をクリアしてから自動生成
-      catSel.innerHTML = '<option value="">すべてのカテゴリー</option>' + categories.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-
-      const locSel = document.getElementById("location");
-      locSel.innerHTML = '<option value="">すべての地域</option>' + locations.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join("");
-    }
-
-    // あいまい検索：小文字化して includes
-    function matchesKeyword(s, kw){
-      if(!kw) return true;
-      const k = kw.trim().toLowerCase();
-      return (s.name && s.name.toLowerCase().includes(k)) ||
-             (s.category && s.category.toLowerCase().includes(k)) ||
-             (s.location && s.location.toLowerCase().includes(k)) ||
-             (s.note && s.note.toLowerCase().includes(k)) ||
-             (s.tags && s.tags.some(t=>t.toLowerCase().includes(k)));
     }
 
     async function search() {
       const kw = document.getElementById("keyword").value;
       const selectedCategory = document.getElementById("category").value;
-      const selectedLocation = document.getElementById("location").value;
       const sponsors = await loadSponsors();
 
       const result = sponsors.filter(s => {
-        const keywordMatch = matchesKeyword(s, kw);
-        const categoryMatch = !selectedCategory || s.category === selectedCategory;
-        const locationMatch = !selectedLocation || s.location === selectedLocation;
-        return keywordMatch && categoryMatch && locationMatch;
+        const keywordMatch =
+          kw === "" ||
+          s.name.includes(kw) ||
+          s.category.includes(kw) ||
+          s.location.includes(kw) ||
+          s.note.includes(kw);
+
+        const categoryMatch =
+          selectedCategory === "" ||
+          s.category === selectedCategory;
+
+        return keywordMatch && categoryMatch;
       });
 
-      renderResults(result);
+      document.getElementById("result").innerHTML =
+        result.length === 0
+          ? "<li>該当なし</li>"
+          : result.map(r =>
+              `<li>
+                <strong>${r.name}</strong><br>
+                カテゴリ：${r.category}<br>
+                地域：${r.location}<br>
+                メモ：${r.note}
+              </li>`
+            ).join("");
     }
 
-    function clearFilters(){
-      document.getElementById("keyword").value = "";
-      document.getElementById("category").value = "";
-      document.getElementById("location").value = "";
-      search();
-    }
-
-    async function init(){
-      await loadSponsors();
-      await generateFilters();
-      // 初回は全件表示
-      const sponsors = await loadSponsors();
-      renderResults(sponsors);
-      // イベント
-      document.getElementById("searchBtn").addEventListener("click", search);
-      document.getElementById("clearBtn").addEventListener("click", clearFilters);
-      // Enter で検索
-      document.getElementById("keyword").addEventListener("keydown", (e)=>{ if(e.key === "Enter") search(); });
-    }
-
-    // DOMContentLoaded 後に init
-    window.addEventListener("DOMContentLoaded", init);
+    // ページ読み込み時に自動表示
+    search();
   </script>
+
 </body>
 </html>
