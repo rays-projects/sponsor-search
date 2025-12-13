@@ -2,130 +2,149 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>スポンサー検索サイト（β）</title>
-
+  <title>テレビ番組スポンサー検索</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #f8f8f8;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 16px;
     }
-
     h1 {
       text-align: center;
-      margin-bottom: 30px;
     }
-
     .search-box {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      max-width: 800px;
+      margin: 0 auto 20px;
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
     }
-
-    input, select {
-      padding: 8px;
-      font-size: 15px;
+    input, select, button {
       width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 16px;
     }
-
     button {
-      padding: 8px 15px;
-      background: #0078ff;
-      color: white;
+      background: #1976d2;
+      color: #fff;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
     }
-
     button:hover {
-      background: #005ec7;
+      background: #125aa0;
     }
-
     ul {
       list-style: none;
       padding: 0;
+      max-width: 800px;
+      margin: 0 auto;
     }
-
     li {
-      background: white;
-      padding: 12px;
-      margin-bottom: 10px;
+      background: #fff;
+      margin-bottom: 12px;
+      padding: 14px;
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+    .program {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .meta {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #555;
+    }
+    .sponsors {
+      margin-top: 8px;
+      font-size: 14px;
     }
   </style>
 </head>
-
 <body>
 
-  <h1>スポンサー検索サイト（β）</h1>
+<h1>📺 テレビ番組スポンサー検索（β）</h1>
 
-  <div class="search-box">
-    <input type="text" id="keyword" placeholder="キーワード検索">
-    <select id="category">
-      <option value="">すべてのカテゴリー</option>
-      <option value="IT">IT</option>
-      <option value="食品">食品</option>
-      <option value="エンタメ">エンタメ</option>
-    </select>
-    <button onclick="search()">検索</button>
-  </div>
+<div class="search-box">
+  <input type="text" id="keyword" placeholder="番組名・スポンサー名・放送局などで検索">
 
-  <ul id="result"></ul>
+  <select id="category">
+    <option value="">すべてのジャンル</option>
+    <option value="バラエティ">バラエティ</option>
+    <option value="ドラマ">ドラマ</option>
+    <option value="情報">情報</option>
+    <option value="ニュース">ニュース</option>
+    <option value="スポーツ">スポーツ</option>
+  </select>
 
-  <script>
-    async function loadSponsors() {
-      try {
-        const res = await fetch("./data/sponsors.json");
-        if (!res.ok) {
-          throw new Error("JSON の読み込みに失敗しました");
-        }
-        const sponsors = await res.json();
-        return sponsors;
-      } catch (e) {
-        console.error(e);
-        return [];
-      }
+  <button onclick="search()">検索</button>
+</div>
+
+<ul id="result"></ul>
+
+<script>
+  async function loadSponsors() {
+    const res = await fetch("./data/sponsors.json");
+    if (!res.ok) {
+      throw new Error("JSONの読み込みに失敗しました");
     }
+    return await res.json();
+  }
 
-    async function search() {
-      const kw = document.getElementById("keyword").value;
-      const selectedCategory = document.getElementById("category").value;
-      const sponsors = await loadSponsors();
+  async function search() {
+    const kw = document.getElementById("keyword").value.trim();
+    const selectedCategory = document.getElementById("category").value;
+    const resultEl = document.getElementById("result");
 
-      const result = sponsors.filter(s => {
+    resultEl.innerHTML = "<li>検索中...</li>";
+
+    try {
+      const data = await loadSponsors();
+
+      const filtered = data.filter(r => {
         const keywordMatch =
           kw === "" ||
-          s.name.includes(kw) ||
-          s.category.includes(kw) ||
-          s.location.includes(kw) ||
-          s.note.includes(kw);
+          r.program?.includes(kw) ||
+          r.network?.includes(kw) ||
+          r.genre?.includes(kw) ||
+          r.sponsors?.join(" ").includes(kw) ||
+          r.notes?.includes(kw);
 
         const categoryMatch =
-          selectedCategory === "" ||
-          s.category === selectedCategory;
+          selectedCategory === "" || r.genre === selectedCategory;
 
         return keywordMatch && categoryMatch;
       });
 
-      document.getElementById("result").innerHTML =
-        result.length === 0
-          ? "<li>該当なし</li>"
-          : result.map(r =>
-              `<li>
-                <strong>${r.name}</strong><br>
-                カテゴリ：${r.category}<br>
-                地域：${r.location}<br>
-                メモ：${r.note}
-              </li>`
-            ).join("");
-    }
+      if (filtered.length === 0) {
+        resultEl.innerHTML = "<li>該当なし</li>";
+        return;
+      }
 
-    // ページ読み込み時に自動表示
-    search();
-  </script>
+      resultEl.innerHTML = filtered.map(r => `
+        <li>
+          <div class="program">${r.program}</div>
+          <div class="meta">
+            放送局：${r.network} ／ ${r.day} ${r.time} ／ ${r.genre}
+          </div>
+          <div class="sponsors">
+            スポンサー：${r.sponsors?.join(" / ") ?? "不明"}
+          </div>
+          ${r.notes ? `<div class="meta">メモ：${r.notes}</div>` : ""}
+        </li>
+      `).join("");
+
+    } catch (err) {
+      console.error(err);
+      resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
+    }
+  }
+</script>
 
 </body>
 </html>
