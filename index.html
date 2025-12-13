@@ -88,62 +88,62 @@
 <ul id="result"></ul>
 
 <script>
-  async function loadSponsors() {
-    const res = await fetch("./data/sponsors.json");
-    if (!res.ok) {
-      throw new Error("JSONの読み込みに失敗しました");
-    }
-    return await res.json();
+async function loadSponsors() {
+  const res = await fetch("./data/sponsors.json");
+  if (!res.ok) {
+    throw new Error("JSONの読み込みに失敗しました");
   }
+  return await res.json();
+}
 
-  async function search() {
-    const kw = document.getElementById("keyword").value.trim();
-    const selectedCategory = document.getElementById("category").value;
-    const resultEl = document.getElementById("result");
+async function search() {
+  const kw = document.getElementById("keyword").value.trim();
+  const selectedCategory = document.getElementById("category").value;
+  const resultEl = document.getElementById("result");
 
-    resultEl.innerHTML = "<li>検索中...</li>";
+  resultEl.innerHTML = "<li>検索中...</li>";
 
-    try {
-      const data = await loadSponsors();
+  try {
+    const data = await loadSponsors();
 
-      const filtered = data.filter(r => {
-        const keywordMatch =
-          kw === "" ||
-          r.program?.includes(kw) ||
-          r.network?.includes(kw) ||
-          r.genre?.includes(kw) ||
-          r.sponsors?.join(" ").includes(kw) ||
-          r.notes?.includes(kw);
+    const filtered = data.filter(r => {
+      const keywordMatch =
+        kw === "" ||
+        r.program?.includes(kw) ||
+        r.network?.includes(kw) ||
+        r.genre?.includes(kw) ||
+        (Array.isArray(r.sponsors) && r.sponsors.join(" ").includes(kw)) ||
+        r.notes?.includes(kw);
 
-        const categoryMatch =
-          selectedCategory === "" || r.genre === selectedCategory;
+      const categoryMatch =
+        selectedCategory === "" || r.genre === selectedCategory;
 
-        return keywordMatch && categoryMatch;
-      });
+      return keywordMatch && categoryMatch;
+    });
 
-      if (filtered.length === 0) {
-        resultEl.innerHTML = "<li>該当なし</li>";
-        return;
-      }
-
-      resultEl.innerHTML = filtered.map(r => `
-        <li>
-          <div class="program">${r.program}</div>
-          <div class="meta">
-            放送局：${r.network} ／ ${r.day} ${r.time} ／ ${r.genre}
-          </div>
-          <div class="sponsors">
-            スポンサー：${r.sponsors?.join(" / ") ?? "不明"}
-          </div>
-          ${r.notes ? `<div class="meta">メモ：${r.notes}</div>` : ""}
-        </li>
-      `).join("");
-
-    } catch (err) {
-      console.error(err);
-      resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
+    if (filtered.length === 0) {
+      resultEl.innerHTML = "<li>該当なし</li>";
+      return;
     }
+
+    resultEl.innerHTML = filtered.map(r => `
+      <li>
+        <div class="program">${r.program ?? "番組名不明"}</div>
+        <div class="meta">
+          放送局：${r.network ?? "不明"} ／ ${r.day ?? ""} ${r.time ?? ""} ／ ${r.genre ?? ""}
+        </div>
+        <div class="sponsors">
+          スポンサー：${Array.isArray(r.sponsors) ? r.sponsors.join(" / ") : "不明"}
+        </div>
+        ${r.notes ? `<div class="meta">メモ：${r.notes}</div>` : ""}
+      </li>
+    `).join("");
+
+  } catch (err) {
+    console.error(err);
+    resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
   }
+}
 </script>
 
 </body>
