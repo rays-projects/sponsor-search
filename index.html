@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>テレビ番組スポンサー検索</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -11,9 +12,12 @@
       margin: 0;
       padding: 16px;
     }
+
     h1 {
       text-align: center;
+      margin-bottom: 20px;
     }
+
     .search-box {
       max-width: 800px;
       margin: 0 auto 20px;
@@ -22,12 +26,14 @@
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
     }
+
     input, select, button {
       width: 100%;
       padding: 10px;
       margin-bottom: 10px;
       font-size: 16px;
     }
+
     button {
       background: #1976d2;
       color: #fff;
@@ -35,15 +41,18 @@
       border-radius: 4px;
       cursor: pointer;
     }
+
     button:hover {
       background: #125aa0;
     }
+
     ul {
       list-style: none;
       padding: 0;
       max-width: 800px;
       margin: 0 auto;
     }
+
     li {
       background: #fff;
       margin-bottom: 12px;
@@ -51,35 +60,45 @@
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0,0,0,.1);
     }
+
     .program {
       font-size: 18px;
       font-weight: bold;
     }
+
     .meta {
       margin-top: 6px;
       font-size: 14px;
       color: #555;
     }
+
     .sponsors {
       margin-top: 8px;
       font-size: 14px;
     }
   </style>
 </head>
+
 <body>
 
 <h1>📺 テレビ番組スポンサー検索（β）</h1>
 
 <div class="search-box">
-  <input type="text" id="keyword" placeholder="番組名・スポンサー名・放送局などで検索">
+  <input
+    type="text"
+    id="keyword"
+    placeholder="番組名・スポンサー名・放送局などで検索"
+  >
 
   <select id="category">
     <option value="">すべてのジャンル</option>
     <option value="バラエティ">バラエティ</option>
     <option value="ドラマ">ドラマ</option>
-    <option value="情報">情報</option>
+    <option value="情報番組">情報番組</option>
     <option value="ニュース">ニュース</option>
-    <option value="スポーツ">スポーツ</option>
+    <option value="報道">報道</option>
+    <option value="アニメ">アニメ</option>
+    <option value="教育">教育</option>
   </select>
 
   <button onclick="search()">検索</button>
@@ -88,62 +107,67 @@
 <ul id="result"></ul>
 
 <script>
-async function loadSponsors() {
-  const res = await fetch("./data/sponsors.json");
-  if (!res.ok) {
-    throw new Error("JSONの読み込みに失敗しました");
-  }
-  return await res.json();
-}
-
-async function search() {
-  const kw = document.getElementById("keyword").value.trim();
-  const selectedCategory = document.getElementById("category").value;
-  const resultEl = document.getElementById("result");
-
-  resultEl.innerHTML = "<li>検索中...</li>";
-
-  try {
-    const data = await loadSponsors();
-
-    const filtered = data.filter(r => {
-      const keywordMatch =
-        kw === "" ||
-        r.program?.includes(kw) ||
-        r.network?.includes(kw) ||
-        r.genre?.includes(kw) ||
-        (Array.isArray(r.sponsors) && r.sponsors.join(" ").includes(kw)) ||
-        r.notes?.includes(kw);
-
-      const categoryMatch =
-        selectedCategory === "" || r.genre === selectedCategory;
-
-      return keywordMatch && categoryMatch;
-    });
-
-    if (filtered.length === 0) {
-      resultEl.innerHTML = "<li>該当なし</li>";
-      return;
+  async function loadSponsors() {
+    const res = await fetch("./data/sponsors.json");
+    if (!res.ok) {
+      throw new Error("JSONの読み込みに失敗しました");
     }
-
-    resultEl.innerHTML = filtered.map(r => `
-      <li>
-        <div class="program">${r.program ?? "番組名不明"}</div>
-        <div class="meta">
-          放送局：${r.network ?? "不明"} ／ ${r.day ?? ""} ${r.time ?? ""} ／ ${r.genre ?? ""}
-        </div>
-        <div class="sponsors">
-          スポンサー：${Array.isArray(r.sponsors) ? r.sponsors.join(" / ") : "不明"}
-        </div>
-        ${r.notes ? `<div class="meta">メモ：${r.notes}</div>` : ""}
-      </li>
-    `).join("");
-
-  } catch (err) {
-    console.error(err);
-    resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
+    return await res.json();
   }
-}
+
+  async function search() {
+    const kw = document.getElementById("keyword").value.trim();
+    const selectedCategory = document.getElementById("category").value;
+    const resultEl = document.getElementById("result");
+
+    resultEl.innerHTML = "<li>検索中...</li>";
+
+    try {
+      const data = await loadSponsors();
+
+      const filtered = data.filter(r => {
+        const keywordMatch =
+          kw === "" ||
+          r.program?.includes(kw) ||
+          r.network?.includes(kw) ||
+          r.genre?.includes(kw) ||
+          r.sponsors?.includes(kw) ||
+          r.notes?.includes(kw);
+
+        const categoryMatch =
+          selectedCategory === "" || r.genre === selectedCategory;
+
+        return keywordMatch && categoryMatch;
+      });
+
+      if (filtered.length === 0) {
+        resultEl.innerHTML = "<li>該当なし</li>";
+        return;
+      }
+
+      resultEl.innerHTML = filtered.map(r => `
+        <li>
+          <div class="program">${r.program ?? "不明"}</div>
+
+          <div class="meta">
+            放送局：${r.network ?? "不明"}
+            ／ ${r.day ?? "-"} ${r.time ?? "-"}
+            ／ ${r.genre ?? "-"}
+          </div>
+
+          <div class="sponsors">
+            スポンサー：${r.sponsors ?? "不明"}
+          </div>
+
+          ${r.notes ? `<div class="meta">メモ：${r.notes}</div>` : ""}
+        </li>
+      `).join("");
+
+    } catch (err) {
+      console.error(err);
+      resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
+    }
+  }
 </script>
 
 </body>
