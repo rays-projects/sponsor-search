@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>テレビ番組スポンサー検索</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -12,12 +11,9 @@
       margin: 0;
       padding: 16px;
     }
-
     h1 {
       text-align: center;
-      margin-bottom: 20px;
     }
-
     .search-box {
       max-width: 800px;
       margin: 0 auto 20px;
@@ -26,14 +22,12 @@
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
     }
-
     input, select, button {
       width: 100%;
       padding: 10px;
       margin-bottom: 10px;
       font-size: 16px;
     }
-
     button {
       background: #1976d2;
       color: #fff;
@@ -41,18 +35,15 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     button:hover {
       background: #125aa0;
     }
-
     ul {
       list-style: none;
       padding: 0;
       max-width: 800px;
       margin: 0 auto;
     }
-
     li {
       background: #fff;
       margin-bottom: 12px;
@@ -60,35 +51,27 @@
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0,0,0,.1);
     }
-
     .program {
       font-size: 18px;
       font-weight: bold;
     }
-
     .meta {
       margin-top: 6px;
       font-size: 14px;
       color: #555;
     }
-
     .sponsors {
       margin-top: 8px;
       font-size: 14px;
     }
   </style>
 </head>
-
 <body>
 
 <h1>📺 テレビ番組スポンサー検索（β）</h1>
 
 <div class="search-box">
-  <input
-    type="text"
-    id="keyword"
-    placeholder="番組名・スポンサー名・放送局などで検索"
-  >
+  <input type="text" id="keyword" placeholder="番組名・スポンサー名・放送局などで検索">
 
   <select id="category">
     <option value="">すべてのジャンル</option>
@@ -96,8 +79,6 @@
     <option value="ドラマ">ドラマ</option>
     <option value="情報番組">情報番組</option>
     <option value="ニュース">ニュース</option>
-    <option value="報道">報道</option>
-    <option value="アニメ">アニメ</option>
     <option value="教育">教育</option>
   </select>
 
@@ -109,10 +90,14 @@
 <script>
   async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
-    if (!res.ok) {
-      throw new Error("JSONの読み込みに失敗しました");
-    }
+    if (!res.ok) throw new Error("JSONの読み込みに失敗しました");
     return await res.json();
+  }
+
+  function buildSponsorList(r) {
+    return [r.sponsor1, r.sponsor2, r.sponsor3]
+      .filter(s => s && s !== "-" && s !== "広告なし")
+      .join(" / ") || "不明";
   }
 
   async function search() {
@@ -126,16 +111,18 @@
       const data = await loadSponsors();
 
       const filtered = data.filter(r => {
-        const keywordMatch =
-          kw === "" ||
-          r.program?.includes(kw) ||
-          r.network?.includes(kw) ||
-          r.genre?.includes(kw) ||
-          r.sponsors?.includes(kw) ||
-          r.notes?.includes(kw);
+        const text = [
+          r.program,
+          r.station,
+          r.genre,
+          r.sponsor1,
+          r.sponsor2,
+          r.sponsor3,
+          r["備考"]
+        ].join(" ");
 
-        const categoryMatch =
-          selectedCategory === "" || r.genre === selectedCategory;
+        const keywordMatch = kw === "" || text.includes(kw);
+        const categoryMatch = selectedCategory === "" || r.genre === selectedCategory;
 
         return keywordMatch && categoryMatch;
       });
@@ -147,19 +134,14 @@
 
       resultEl.innerHTML = filtered.map(r => `
         <li>
-          <div class="program">${r.program ?? "不明"}</div>
-
+          <div class="program">${r.program}</div>
           <div class="meta">
-            放送局：${r.network ?? "不明"}
-            ／ ${r.day ?? "-"} ${r.time ?? "-"}
-            ／ ${r.genre ?? "-"}
+            放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
           </div>
-
           <div class="sponsors">
-            スポンサー：${r.sponsors ?? "不明"}
+            スポンサー：${buildSponsorList(r)}
           </div>
-
-          ${r.notes ? `<div class="meta">メモ：${r.notes}</div>` : ""}
+          ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
         </li>
       `).join("");
 
