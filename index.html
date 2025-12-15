@@ -63,7 +63,6 @@
       color: #555;
     }
 
-    /* ★ スポンサータグ */
     .sponsor-tags {
       margin-top: 8px;
       display: flex;
@@ -77,7 +76,6 @@
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 13px;
-      white-space: nowrap;
     }
   </style>
 </head>
@@ -86,7 +84,7 @@
 <h1>📺 テレビ番組スポンサー検索（β）</h1>
 
 <div class="search-box">
-  <input type="text" id="keyword" placeholder="番組名・スポンサー名・放送局などで検索">
+  <input type="text" id="keyword" placeholder="キーワード検索">
 
   <select id="station">
     <option value="">すべての放送局</option>
@@ -120,22 +118,19 @@
     <option value="日">日</option>
     <option value="月〜金">月〜金</option>
     <option value="毎日">毎日</option>
-    <option value="不定">不定</option>
   </select>
 
   <button onclick="search()">検索</button>
 </div>
 
-<div id="result-info" style="max-width:800px;margin:0 auto 10px;color:#555;font-size:14px;"></div>
-
+<div id="result-info" style="max-width:800px;margin:0 auto 10px;font-size:14px;color:#555;"></div>
 <ul id="result"></ul>
 
 <script>
-  function timeToNumber(timeStr) {
-    if (!timeStr) return 9999;
-    const match = timeStr.match(/^(\d{1,2}):(\d{2})/);
-    if (!match) return 9999;
-    return parseInt(match[1]) * 100 + parseInt(match[2]);
+  function timeToNumber(t) {
+    if (!t) return 9999;
+    const m = t.match(/^(\d{1,2}):(\d{2})/);
+    return m ? parseInt(m[1]) * 100 + parseInt(m[2]) : 9999;
   }
 
   async function loadSponsors() {
@@ -143,64 +138,70 @@
     return await res.json();
   }
 
-  async function search() {
-    const kw = document.getElementById("keyword").value.trim();
-    const station = document.getElementById("station").value;
-    const category = document.getElementById("category").value;
-    const day = document.getElementById("day").value;
-    const resultEl = document.getElementById("result");
-    const infoEl = document.getElementById("result-info");
+  function updateURL(params) {
+    const url = new URL(window.location);
+    Object.keys(params).forEach(k => {
+      if (params[k]) url.searchParams.set(k, params[k]);
+      else url.searchParams.delete(k);
+    });
+    history.replaceState(null, "", url);
+  }
 
-    resultEl.innerHTML = "<li>検索中...</li>";
-    infoEl.textContent = "";
+  async function search() {
+    const kw = keyword.value.trim();
+    const station = stationSelect.value;
+    const category = categorySelect.value;
+    const day = daySelect.value;
+
+    updateURL({ kw, station, category, day });
 
     const data = await loadSponsors();
 
     let filtered = data.filter(r => {
       const sponsorsText = [r.sponsor1, r.sponsor2, r.sponsor3].join(" ");
       return (
-        (kw === "" ||
-          r.program?.includes(kw) ||
-          r.station?.includes(kw) ||
-          sponsorsText.includes(kw)) &&
-        (station === "" || r.station === station) &&
-        (category === "" || r.genre === category) &&
-        (day === "" || r.day?.includes(day))
+        (!kw || r.program.includes(kw) || sponsorsText.includes(kw)) &&
+        (!station || r.station === station) &&
+        (!category || r.genre === category) &&
+        (!day || r.day.includes(day))
       );
     });
 
     filtered.sort((a, b) => timeToNumber(a.time) - timeToNumber(b.time));
 
-    if (filtered.length === 0) {
-      resultEl.innerHTML = "<li>該当なし</li>";
-      infoEl.textContent = "検索結果：0件";
-      return;
-    }
-
-    infoEl.textContent = `検索結果：${filtered.length}件（時間順）`;
-
-    resultEl.innerHTML = filtered.map(r => {
+    result.innerHTML = filtered.map(r => {
       const sponsors = [r.sponsor1, r.sponsor2, r.sponsor3]
         .filter(s => s && s !== "-" && !s.includes("なし"));
-
-      const sponsorTags = sponsors.length
-        ? sponsors.map(s => `<span class="tag">${s}</span>`).join("")
-        : `<span class="tag">スポンサーなし</span>`;
 
       return `
         <li>
           <div class="program">${r.program}</div>
-          <div class="meta">
-            放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
-          </div>
+          <div class="meta">放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}</div>
           <div class="sponsor-tags">
-            ${sponsorTags}
+            ${sponsors.map(s => `<span class="tag">${s}</span>`).join("")}
           </div>
-          ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
         </li>
       `;
     }).join("");
+
+    resultInfo.textContent = `検索結果：${filtered.length}件`;
   }
+
+  const keyword = document.getElementById("keyword");
+  const stationSelect = document.getElementById("station");
+  const categorySelect = document.getElementById("category");
+  const daySelect = document.getElementById("day");
+  const result = document.getElementById("result");
+  const resultInfo = document.getElementById("result-info");
+
+  // ★ URLから初期値を復元
+  const params = new URLSearchParams(window.location.search);
+  keyword.value = params.get("kw") || "";
+  stationSelect.value = params.get("station") || "";
+  categorySelect.value = params.get("category") || "";
+  daySelect.value = params.get("day") || "";
+
+  if (params.toString()) search();
 </script>
 
 </body>
