@@ -76,6 +76,12 @@
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tag:hover {
+      background: #bbdefb;
     }
   </style>
 </head>
@@ -178,13 +184,21 @@
           <div class="program">${r.program}</div>
           <div class="meta">放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}</div>
           <div class="sponsor-tags">
-            ${sponsors.map(s => `<span class="tag">${s}</span>`).join("")}
+            ${sponsors.map(s => `<span class="tag" data-sponsor="${s}">${s}</span>`).join("")}
           </div>
         </li>
       `;
     }).join("");
 
     resultInfo.textContent = `検索結果：${filtered.length}件`;
+
+    // ★ タグクリックで再検索
+    document.querySelectorAll(".tag").forEach(tag => {
+      tag.addEventListener("click", () => {
+        keyword.value = tag.dataset.sponsor;
+        search();
+      });
+    });
   }
 
   const keyword = document.getElementById("keyword");
@@ -194,7 +208,7 @@
   const result = document.getElementById("result");
   const resultInfo = document.getElementById("result-info");
 
-  // ★ URLから初期値を復元
+  // URL復元
   const params = new URLSearchParams(window.location.search);
   keyword.value = params.get("kw") || "";
   stationSelect.value = params.get("station") || "";
