@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>テレビ番組スポンサー検索</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -11,11 +12,14 @@
       margin: 0;
       padding: 16px;
     }
-    h1 { text-align: center; }
+
+    h1 {
+      text-align: center;
+    }
 
     .search-box {
       max-width: 800px;
-      margin: 0 auto 10px;
+      margin: 0 auto 20px;
       background: #fff;
       padding: 16px;
       border-radius: 8px;
@@ -35,6 +39,10 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+    }
+
+    button:hover {
+      background: #125aa0;
     }
 
     ul {
@@ -57,31 +65,24 @@
       font-weight: bold;
     }
 
+    .program a {
+      color: #1976d2;
+      text-decoration: none;
+    }
+
+    .program a:hover {
+      text-decoration: underline;
+    }
+
     .meta {
       margin-top: 6px;
       font-size: 14px;
       color: #555;
     }
 
-    .sponsor-tags {
+    .sponsors {
       margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .tag {
-      background: #e3f2fd;
-      color: #0d47a1;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .tag:hover {
-      background: #bbdefb;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -90,132 +91,100 @@
 <h1>📺 テレビ番組スポンサー検索（β）</h1>
 
 <div class="search-box">
-  <input type="text" id="keyword" placeholder="キーワード検索">
-
-  <select id="station">
-    <option value="">すべての放送局</option>
-    <option value="日本テレビ">日本テレビ</option>
-    <option value="TBS">TBS</option>
-    <option value="フジテレビ">フジテレビ</option>
-    <option value="テレビ朝日">テレビ朝日</option>
-    <option value="NHK総合">NHK総合</option>
-    <option value="NHK教育（Eテレ）">NHK教育（Eテレ）</option>
-  </select>
+  <input
+    type="text"
+    id="keyword"
+    placeholder="番組名・スポンサー名・放送局で検索">
 
   <select id="category">
     <option value="">すべてのジャンル</option>
     <option value="バラエティ">バラエティ</option>
     <option value="ドラマ">ドラマ</option>
-    <option value="情報番組">情報番組</option>
+    <option value="情報">情報</option>
     <option value="ニュース">ニュース</option>
-    <option value="報道">報道</option>
-    <option value="教育">教育</option>
+    <option value="スポーツ">スポーツ</option>
     <option value="アニメ">アニメ</option>
-  </select>
-
-  <select id="day">
-    <option value="">すべての曜日</option>
-    <option value="月">月</option>
-    <option value="火">火</option>
-    <option value="水">水</option>
-    <option value="木">木</option>
-    <option value="金">金</option>
-    <option value="土">土</option>
-    <option value="日">日</option>
-    <option value="月〜金">月〜金</option>
-    <option value="毎日">毎日</option>
+    <option value="教育">教育</option>
   </select>
 
   <button onclick="search()">検索</button>
 </div>
 
-<div id="result-info" style="max-width:800px;margin:0 auto 10px;font-size:14px;color:#555;"></div>
 <ul id="result"></ul>
 
 <script>
-  function timeToNumber(t) {
-    if (!t) return 9999;
-    const m = t.match(/^(\d{1,2}):(\d{2})/);
-    return m ? parseInt(m[1]) * 100 + parseInt(m[2]) : 9999;
-  }
-
   async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
+    if (!res.ok) {
+      throw new Error("JSONの読み込みに失敗しました");
+    }
     return await res.json();
   }
 
-  function updateURL(params) {
-    const url = new URL(window.location);
-    Object.keys(params).forEach(k => {
-      if (params[k]) url.searchParams.set(k, params[k]);
-      else url.searchParams.delete(k);
-    });
-    history.replaceState(null, "", url);
-  }
-
   async function search() {
-    const kw = keyword.value.trim();
-    const station = stationSelect.value;
-    const category = categorySelect.value;
-    const day = daySelect.value;
+    const kw = document.getElementById("keyword").value.trim();
+    const selectedCategory = document.getElementById("category").value;
+    const resultEl = document.getElementById("result");
 
-    updateURL({ kw, station, category, day });
+    resultEl.innerHTML = "<li>検索中...</li>";
 
-    const data = await loadSponsors();
+    try {
+      const data = await loadSponsors();
 
-    let filtered = data.filter(r => {
-      const sponsorsText = [r.sponsor1, r.sponsor2, r.sponsor3].join(" ");
-      return (
-        (!kw || r.program.includes(kw) || sponsorsText.includes(kw)) &&
-        (!station || r.station === station) &&
-        (!category || r.genre === category) &&
-        (!day || r.day.includes(day))
-      );
-    });
+      const filtered = data.filter(r => {
+        const sponsorText = [
+          r.sponsor1,
+          r.sponsor2,
+          r.sponsor3
+        ].join(" ");
 
-    filtered.sort((a, b) => timeToNumber(a.time) - timeToNumber(b.time));
+        const keywordMatch =
+          kw === "" ||
+          r.program?.includes(kw) ||
+          r.station?.includes(kw) ||
+          r.genre?.includes(kw) ||
+          sponsorText.includes(kw) ||
+          r["備考"]?.includes(kw);
 
-    result.innerHTML = filtered.map(r => {
-      const sponsors = [r.sponsor1, r.sponsor2, r.sponsor3]
-        .filter(s => s && s !== "-" && !s.includes("なし"));
+        const categoryMatch =
+          selectedCategory === "" || r.genre === selectedCategory;
 
-      return `
+        return keywordMatch && categoryMatch;
+      });
+
+      if (filtered.length === 0) {
+        resultEl.innerHTML = "<li>該当する番組がありません</li>";
+        return;
+      }
+
+      resultEl.innerHTML = filtered.map(r => `
         <li>
-          <div class="program">${r.program}</div>
-          <div class="meta">放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}</div>
-          <div class="sponsor-tags">
-            ${sponsors.map(s => `<span class="tag" data-sponsor="${s}">${s}</span>`).join("")}
+          <div class="program">
+            <a href="program.html?id=${r.id}">
+              ${r.program}
+            </a>
+          </div>
+
+          <div class="meta">
+            放送局：${r.station ?? "不明"} ／
+            ${r.day} ${r.time} ／
+            ${r.genre}
+          </div>
+
+          <div class="sponsors">
+            スポンサー：
+            ${[r.sponsor1, r.sponsor2, r.sponsor3]
+              .filter(Boolean)
+              .join(" / ") || "なし"}
           </div>
         </li>
-      `;
-    }).join("");
+      `).join("");
 
-    resultInfo.textContent = `検索結果：${filtered.length}件`;
-
-    // ★ タグクリックで再検索
-    document.querySelectorAll(".tag").forEach(tag => {
-      tag.addEventListener("click", () => {
-        keyword.value = tag.dataset.sponsor;
-        search();
-      });
-    });
+    } catch (err) {
+      console.error(err);
+      resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
+    }
   }
-
-  const keyword = document.getElementById("keyword");
-  const stationSelect = document.getElementById("station");
-  const categorySelect = document.getElementById("category");
-  const daySelect = document.getElementById("day");
-  const result = document.getElementById("result");
-  const resultInfo = document.getElementById("result-info");
-
-  // URL復元
-  const params = new URLSearchParams(window.location.search);
-  keyword.value = params.get("kw") || "";
-  stationSelect.value = params.get("station") || "";
-  categorySelect.value = params.get("category") || "";
-  daySelect.value = params.get("day") || "";
-
-  if (params.toString()) search();
 </script>
 
 </body>
