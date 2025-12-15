@@ -73,19 +73,6 @@
 <div class="search-box">
   <input type="text" id="keyword" placeholder="番組名・スポンサー名・放送局などで検索">
 
-  <!-- ジャンル -->
-  <select id="category">
-    <option value="">すべてのジャンル</option>
-    <option value="バラエティ">バラエティ</option>
-    <option value="ドラマ">ドラマ</option>
-    <option value="情報番組">情報番組</option>
-    <option value="ニュース">ニュース</option>
-    <option value="報道">報道</option>
-    <option value="アニメ">アニメ</option>
-    <option value="教育">教育</option>
-  </select>
-
-  <!-- ★ 放送局（今回追加） -->
   <select id="station">
     <option value="">すべての放送局</option>
     <option value="日本テレビ">日本テレビ</option>
@@ -96,6 +83,32 @@
     <option value="NHK教育（Eテレ）">NHK教育（Eテレ）</option>
   </select>
 
+  <select id="category">
+    <option value="">すべてのジャンル</option>
+    <option value="バラエティ">バラエティ</option>
+    <option value="ドラマ">ドラマ</option>
+    <option value="情報番組">情報番組</option>
+    <option value="ニュース">ニュース</option>
+    <option value="報道">報道</option>
+    <option value="教育">教育</option>
+    <option value="アニメ">アニメ</option>
+  </select>
+
+  <!-- ★ 曜日フィルタ -->
+  <select id="day">
+    <option value="">すべての曜日</option>
+    <option value="月">月</option>
+    <option value="火">火</option>
+    <option value="水">水</option>
+    <option value="木">木</option>
+    <option value="金">金</option>
+    <option value="土">土</option>
+    <option value="日">日</option>
+    <option value="月〜金">月〜金</option>
+    <option value="毎日">毎日</option>
+    <option value="不定">不定</option>
+  </select>
+
   <button onclick="search()">検索</button>
 </div>
 
@@ -104,14 +117,17 @@
 <script>
   async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
-    if (!res.ok) throw new Error("JSONの読み込みに失敗しました");
+    if (!res.ok) {
+      throw new Error("JSONの読み込みに失敗しました");
+    }
     return await res.json();
   }
 
   async function search() {
     const kw = document.getElementById("keyword").value.trim();
-    const selectedCategory = document.getElementById("category").value;
     const selectedStation = document.getElementById("station").value;
+    const selectedCategory = document.getElementById("category").value;
+    const selectedDay = document.getElementById("day").value;
     const resultEl = document.getElementById("result");
 
     resultEl.innerHTML = "<li>検索中...</li>";
@@ -125,18 +141,19 @@
           r.program?.includes(kw) ||
           r.station?.includes(kw) ||
           r.genre?.includes(kw) ||
-          Object.keys(r)
-            .filter(k => k.startsWith("sponsor"))
-            .some(k => r[k]?.includes(kw)) ||
+          [r.sponsor1, r.sponsor2, r.sponsor3].join(" ").includes(kw) ||
           r["備考"]?.includes(kw);
-
-        const categoryMatch =
-          selectedCategory === "" || r.genre === selectedCategory;
 
         const stationMatch =
           selectedStation === "" || r.station === selectedStation;
 
-        return keywordMatch && categoryMatch && stationMatch;
+        const categoryMatch =
+          selectedCategory === "" || r.genre === selectedCategory;
+
+        const dayMatch =
+          selectedDay === "" || r.day?.includes(selectedDay);
+
+        return keywordMatch && stationMatch && categoryMatch && dayMatch;
       });
 
       if (filtered.length === 0) {
@@ -144,25 +161,21 @@
         return;
       }
 
-      resultEl.innerHTML = filtered.map(r => {
-        const sponsors = Object.keys(r)
-          .filter(k => k.startsWith("sponsor"))
-          .map(k => r[k])
-          .filter(v => v && v !== "-" && !v.includes("なし"));
-
-        return `
-          <li>
-            <div class="program">${r.program}</div>
-            <div class="meta">
-              放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
-            </div>
-            <div class="sponsors">
-              スポンサー：${sponsors.length ? sponsors.join(" / ") : "なし"}
-            </div>
-            ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
-          </li>
-        `;
-      }).join("");
+      resultEl.innerHTML = filtered.map(r => `
+        <li>
+          <div class="program">${r.program}</div>
+          <div class="meta">
+            放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
+          </div>
+          <div class="sponsors">
+            スポンサー：
+            ${[r.sponsor1, r.sponsor2, r.sponsor3]
+              .filter(s => s && s !== "-")
+              .join(" / ") || "不明"}
+          </div>
+          ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
+        </li>
+      `).join("");
 
     } catch (err) {
       console.error(err);
