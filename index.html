@@ -15,11 +15,12 @@
 
     h1 {
       text-align: center;
+      margin-bottom: 16px;
     }
 
     .search-box {
       max-width: 800px;
-      margin: 0 auto 16px;
+      margin: 0 auto 12px;
       display: flex;
       gap: 8px;
     }
@@ -51,6 +52,7 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
       transition: background .2s;
+      cursor: pointer;
     }
 
     li:hover {
@@ -93,7 +95,6 @@
 </div>
 
 <div class="count" id="count"></div>
-
 <ul id="results"></ul>
 
 <script>
@@ -105,45 +106,50 @@
     render();
   }
 
+  function getSponsors(p) {
+    return [p.sponsor1, p.sponsor2, p.sponsor3]
+      .filter(s => s && s !== "-");
+  }
+
   function render() {
     const keyword = document.getElementById("keyword").value.toLowerCase();
     const day = document.getElementById("dayFilter").value;
 
     const filtered = programs.filter(p => {
+      const sponsors = getSponsors(p);
+
       const textMatch =
         p.program.toLowerCase().includes(keyword) ||
-        [p.sponsor1, p.sponsor2, p.sponsor3].some(s =>
-          s && s.toLowerCase().includes(keyword)
-        );
+        sponsors.some(s => s.toLowerCase().includes(keyword));
 
       const dayMatch = !day || p.day.includes(day);
 
       return textMatch && dayMatch;
     });
 
-    const resultEl = document.getElementById("results");
-    const countEl = document.getElementById("count");
+    document.getElementById("count").textContent =
+      `${filtered.length} 件の番組が見つかりました`;
 
-    countEl.textContent = `${filtered.length} 件の番組が見つかりました`;
+    document.getElementById("results").innerHTML =
+      filtered.map(p => {
+        const sponsors = getSponsors(p).join(" / ") || "不明";
 
-    resultEl.innerHTML = filtered.map(r => `
-      <li onclick="location.href='program.html?id=${r.id}'" style="cursor:pointer;">
-        <div class="program">${r.program}</div>
+        return `
+          <li onclick="location.href='program.html?id=${p.id}'">
+            <div class="program">${p.program}</div>
 
-        <div class="meta">
-          放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
-        </div>
+            <div class="meta">
+              放送局：${p.station} ／ ${p.day} ${p.time} ／ ${p.genre}
+            </div>
 
-        <div class="sponsors">
-          スポンサー：
-          ${[r.sponsor1, r.sponsor2, r.sponsor3]
-            .filter(s => s && s !== "-")
-            .join(" / ") || "不明"}
-        </div>
+            <div class="sponsors">
+              スポンサー：${sponsors}
+            </div>
 
-        ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
-      </li>
-    `).join("");
+            ${p["備考"] ? `<div class="meta">メモ：${p["備考"]}</div>` : ""}
+          </li>
+        `;
+      }).join("");
   }
 
   document.getElementById("keyword").addEventListener("input", render);
