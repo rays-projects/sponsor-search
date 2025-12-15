@@ -1,50 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>番組スポンサー検索</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, sans-serif;
       background: #f4f4f4;
       margin: 0;
       padding: 16px;
     }
-
     h1 {
       text-align: center;
       margin-bottom: 16px;
     }
-
     .search-box {
       max-width: 800px;
       margin: 0 auto 12px;
       display: flex;
       gap: 8px;
     }
-
     input, select {
       flex: 1;
       padding: 8px;
       font-size: 14px;
     }
-
     .count {
       max-width: 800px;
       margin: 0 auto 8px;
       font-size: 14px;
       color: #555;
     }
-
     ul {
       max-width: 800px;
       margin: 0 auto;
       padding: 0;
       list-style: none;
     }
-
     li {
       background: #fff;
       margin-bottom: 12px;
@@ -53,22 +46,18 @@
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
       cursor: pointer;
     }
-
     li:hover {
       background: #f0f7ff;
     }
-
     .program {
       font-size: 18px;
       font-weight: bold;
     }
-
     .meta {
       font-size: 14px;
       color: #555;
       margin-top: 4px;
     }
-
     .sponsors {
       margin-top: 6px;
       font-size: 14px;
@@ -80,7 +69,7 @@
 <h1>番組スポンサー検索</h1>
 
 <div class="search-box">
-  <input type="text" id="keyword" placeholder="番組名・スポンサー名で検索">
+  <input id="keyword" type="text" placeholder="番組名・スポンサー名で検索" />
   <select id="dayFilter">
     <option value="">すべての曜日</option>
     <option value="月">月</option>
@@ -100,21 +89,13 @@
   let programs = [];
 
   async function loadData() {
-    try {
-      const res = await fetch("./data/sponsors.json");
-      if (!res.ok) throw new Error("JSON load failed");
-      programs = await res.json();
-      render();
-    } catch (e) {
-      document.getElementById("count").textContent =
-        "データの読み込みに失敗しました";
-      console.error(e);
-    }
+    const res = await fetch("./data/sponsors.json");
+    programs = await res.json();
+    render();
   }
 
   function getSponsors(p) {
-    return [p.sponsor1, p.sponsor2, p.sponsor3]
-      .filter(s => s && s !== "-");
+    return [p.sponsor1, p.sponsor2, p.sponsor3].filter(s => s && s !== "-");
   }
 
   function render() {
@@ -122,32 +103,24 @@
     const day = document.getElementById("dayFilter").value;
 
     const filtered = programs.filter(p => {
-      if (!p.program) return false;
-
-      const sponsors = getSponsors(p);
       const textMatch =
         p.program.toLowerCase().includes(keyword) ||
-        sponsors.some(s => s.toLowerCase().includes(keyword));
+        getSponsors(p).some(s => s.toLowerCase().includes(keyword));
 
-      const dayMatch = !day || (p.day && p.day.includes(day));
+      const dayMatch = !day || p.day.includes(day);
       return textMatch && dayMatch;
     });
 
     document.getElementById("count").textContent =
       `${filtered.length} 件の番組が見つかりました`;
 
-    document.getElementById("results").innerHTML =
-      filtered.map(p => `
-        <li onclick="location.href='program.html?id=${p.id}'">
-          <div class="program">${p.program}</div>
-          <div class="meta">
-            放送局：${p.station || "不明"} ／ ${p.day || ""} ${p.time || ""} ／ ${p.genre || ""}
-          </div>
-          <div class="sponsors">
-            スポンサー：${getSponsors(p).join(" / ") || "不明"}
-          </div>
-        </li>
-      `).join("");
+    document.getElementById("results").innerHTML = filtered.map(p => `
+      <li onclick="location.href='program.html?id=${p.id}'">
+        <div class="program">${p.program}</div>
+        <div class="meta">放送局：${p.station} ／ ${p.day} ${p.time}</div>
+        <div class="sponsors">スポンサー：${getSponsors(p).join(" / ") || "不明"}</div>
+      </li>
+    `).join("");
   }
 
   document.getElementById("keyword").addEventListener("input", render);
