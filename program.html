@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>番組詳細</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -12,13 +13,13 @@
       padding: 16px;
     }
 
-    .card {
+    .container {
       max-width: 800px;
       margin: 0 auto;
       background: #fff;
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
     }
 
     h1 {
@@ -26,78 +27,93 @@
     }
 
     .meta {
+      margin: 8px 0;
       color: #555;
-      margin-bottom: 10px;
-      font-size: 15px;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 10px 0;
-    }
-
-    .tag {
-      background: #e3f2fd;
-      color: #0d47a1;
-      padding: 6px 12px;
-      border-radius: 999px;
       font-size: 14px;
     }
 
+    .sponsors {
+      margin-top: 12px;
+      font-size: 15px;
+    }
+
     .back {
-      margin-top: 20px;
+      margin-bottom: 16px;
       display: inline-block;
       text-decoration: none;
       color: #1976d2;
+      font-size: 14px;
+    }
+
+    .back:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-<div class="card" id="content">
-  読み込み中…
+<div class="container">
+
+  <!-- 🔙 一覧へ戻る -->
+  <a href="index.html" class="back">← 一覧へ戻る</a>
+
+  <div id="content">読み込み中...</div>
+
 </div>
 
 <script>
-  async function loadData() {
+  async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
+    if (!res.ok) {
+      throw new Error("JSONの読み込みに失敗しました");
+    }
     return await res.json();
   }
 
-  function getId() {
+  function getIdFromQuery() {
     const params = new URLSearchParams(window.location.search);
     return Number(params.get("id"));
   }
 
   async function render() {
-    const id = getId();
-    const data = await loadData();
-    const r = data.find(d => d.id === id);
+    const id = getIdFromQuery();
+    const container = document.getElementById("content");
 
-    if (!r) {
-      content.innerHTML = "番組が見つかりません";
+    if (!id) {
+      container.innerHTML = "<p>番組が見つかりません</p>";
       return;
     }
 
-    const sponsors = [r.sponsor1, r.sponsor2, r.sponsor3]
-      .filter(s => s && s !== "-" && !s.includes("なし"));
+    const data = await loadSponsors();
+    const program = data.find(p => p.id === id);
 
-    content.innerHTML = `
-      <h1>${r.program}</h1>
-      <div class="meta">放送局：${r.station}</div>
-      <div class="meta">放送時間：${r.day} ${r.time}</div>
-      <div class="meta">ジャンル：${r.genre}</div>
+    if (!program) {
+      container.innerHTML = "<p>番組が見つかりません</p>";
+      return;
+    }
 
-      <h3>スポンサー</h3>
-      <div class="tags">
-        ${sponsors.map(s => `<span class="tag">${s}</span>`).join("")}
+    container.innerHTML = `
+      <h1>${program.program}</h1>
+
+      <div class="meta">
+        放送局：${program.station}<br>
+        放送日時：${program.day} ${program.time}<br>
+        ジャンル：${program.genre}
       </div>
 
-      ${r.備考 ? `<h3>備考</h3><p>${r.備考}</p>` : ""}
+      <div class="sponsors">
+        <strong>スポンサー</strong><br>
+        ${[program.sponsor1, program.sponsor2, program.sponsor3]
+          .filter(s => s && s !== "-")
+          .join("<br>") || "なし"}
+      </div>
 
-      <a href="./index.html" class="back">← 検索に戻る</a>
+      ${program["備考"] ? `
+        <div class="meta">
+          <strong>メモ</strong><br>
+          ${program["備考"]}
+        </div>
+      ` : ""}
     `;
   }
 
