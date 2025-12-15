@@ -51,7 +51,6 @@
       padding: 12px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
-      transition: background .2s;
       cursor: pointer;
     }
 
@@ -101,9 +100,16 @@
   let programs = [];
 
   async function loadData() {
-    const res = await fetch("./data/sponsors.json");
-    programs = await res.json();
-    render();
+    try {
+      const res = await fetch("./data/sponsors.json");
+      if (!res.ok) throw new Error("JSON load failed");
+      programs = await res.json();
+      render();
+    } catch (e) {
+      document.getElementById("count").textContent =
+        "データの読み込みに失敗しました";
+      console.error(e);
+    }
   }
 
   function getSponsors(p) {
@@ -116,14 +122,14 @@
     const day = document.getElementById("dayFilter").value;
 
     const filtered = programs.filter(p => {
-      const sponsors = getSponsors(p);
+      if (!p.program) return false;
 
+      const sponsors = getSponsors(p);
       const textMatch =
         p.program.toLowerCase().includes(keyword) ||
         sponsors.some(s => s.toLowerCase().includes(keyword));
 
-      const dayMatch = !day || p.day.includes(day);
-
+      const dayMatch = !day || (p.day && p.day.includes(day));
       return textMatch && dayMatch;
     });
 
@@ -131,25 +137,17 @@
       `${filtered.length} 件の番組が見つかりました`;
 
     document.getElementById("results").innerHTML =
-      filtered.map(p => {
-        const sponsors = getSponsors(p).join(" / ") || "不明";
-
-        return `
-          <li onclick="location.href='program.html?id=${p.id}'">
-            <div class="program">${p.program}</div>
-
-            <div class="meta">
-              放送局：${p.station} ／ ${p.day} ${p.time} ／ ${p.genre}
-            </div>
-
-            <div class="sponsors">
-              スポンサー：${sponsors}
-            </div>
-
-            ${p["備考"] ? `<div class="meta">メモ：${p["備考"]}</div>` : ""}
-          </li>
-        `;
-      }).join("");
+      filtered.map(p => `
+        <li onclick="location.href='program.html?id=${p.id}'">
+          <div class="program">${p.program}</div>
+          <div class="meta">
+            放送局：${p.station || "不明"} ／ ${p.day || ""} ${p.time || ""} ／ ${p.genre || ""}
+          </div>
+          <div class="sponsors">
+            スポンサー：${getSponsors(p).join(" / ") || "不明"}
+          </div>
+        </li>
+      `).join("");
   }
 
   document.getElementById("keyword").addEventListener("input", render);
