@@ -12,6 +12,7 @@
       padding: 16px;
     }
     h1 { text-align: center; }
+
     .search-box {
       max-width: 800px;
       margin: 0 auto 10px;
@@ -20,12 +21,14 @@
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
     }
+
     input, select, button {
       width: 100%;
       padding: 10px;
       margin-bottom: 10px;
       font-size: 16px;
     }
+
     button {
       background: #1976d2;
       color: #fff;
@@ -33,12 +36,14 @@
       border-radius: 4px;
       cursor: pointer;
     }
+
     ul {
       list-style: none;
       padding: 0;
       max-width: 800px;
       margin: 0 auto;
     }
+
     li {
       background: #fff;
       margin-bottom: 12px;
@@ -46,9 +51,34 @@
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0,0,0,.1);
     }
-    .program { font-size: 18px; font-weight: bold; }
-    .meta { margin-top: 6px; font-size: 14px; color: #555; }
-    .sponsors { margin-top: 8px; font-size: 14px; }
+
+    .program {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .meta {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    /* ★ スポンサータグ */
+    .sponsor-tags {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      background: #e3f2fd;
+      color: #0d47a1;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -127,21 +157,19 @@
     const data = await loadSponsors();
 
     let filtered = data.filter(r => {
+      const sponsorsText = [r.sponsor1, r.sponsor2, r.sponsor3].join(" ");
       return (
         (kw === "" ||
           r.program?.includes(kw) ||
           r.station?.includes(kw) ||
-          [r.sponsor1, r.sponsor2, r.sponsor3].join(" ").includes(kw)) &&
+          sponsorsText.includes(kw)) &&
         (station === "" || r.station === station) &&
         (category === "" || r.genre === category) &&
         (day === "" || r.day?.includes(day))
       );
     });
 
-    // ★ 時間帯でソート
-    filtered.sort((a, b) => {
-      return timeToNumber(a.time) - timeToNumber(b.time);
-    });
+    filtered.sort((a, b) => timeToNumber(a.time) - timeToNumber(b.time));
 
     if (filtered.length === 0) {
       resultEl.innerHTML = "<li>該当なし</li>";
@@ -151,19 +179,27 @@
 
     infoEl.textContent = `検索結果：${filtered.length}件（時間順）`;
 
-    resultEl.innerHTML = filtered.map(r => `
-      <li>
-        <div class="program">${r.program}</div>
-        <div class="meta">
-          放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
-        </div>
-        <div class="sponsors">
-          スポンサー：
-          ${[r.sponsor1, r.sponsor2, r.sponsor3].filter(s => s && s !== "-").join(" / ") || "不明"}
-        </div>
-        ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
-      </li>
-    `).join("");
+    resultEl.innerHTML = filtered.map(r => {
+      const sponsors = [r.sponsor1, r.sponsor2, r.sponsor3]
+        .filter(s => s && s !== "-" && !s.includes("なし"));
+
+      const sponsorTags = sponsors.length
+        ? sponsors.map(s => `<span class="tag">${s}</span>`).join("")
+        : `<span class="tag">スポンサーなし</span>`;
+
+      return `
+        <li>
+          <div class="program">${r.program}</div>
+          <div class="meta">
+            放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
+          </div>
+          <div class="sponsor-tags">
+            ${sponsorTags}
+          </div>
+          ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
+        </li>
+      `;
+    }).join("");
   }
 </script>
 
