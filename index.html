@@ -11,12 +11,10 @@
       margin: 0;
       padding: 16px;
     }
-    h1 {
-      text-align: center;
-    }
+    h1 { text-align: center; }
     .search-box {
       max-width: 800px;
-      margin: 0 auto 20px;
+      margin: 0 auto 10px;
       background: #fff;
       padding: 16px;
       border-radius: 8px;
@@ -35,9 +33,6 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    button:hover {
-      background: #125aa0;
-    }
     ul {
       list-style: none;
       padding: 0;
@@ -51,19 +46,9 @@
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0,0,0,.1);
     }
-    .program {
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .meta {
-      margin-top: 6px;
-      font-size: 14px;
-      color: #555;
-    }
-    .sponsors {
-      margin-top: 8px;
-      font-size: 14px;
-    }
+    .program { font-size: 18px; font-weight: bold; }
+    .meta { margin-top: 6px; font-size: 14px; color: #555; }
+    .sponsors { margin-top: 8px; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -94,7 +79,6 @@
     <option value="アニメ">アニメ</option>
   </select>
 
-  <!-- ★ 曜日フィルタ -->
   <select id="day">
     <option value="">すべての曜日</option>
     <option value="月">月</option>
@@ -112,75 +96,63 @@
   <button onclick="search()">検索</button>
 </div>
 
+<!-- ★ 検索結果件数 -->
+<div id="result-info" style="max-width:800px;margin:0 auto 10px;color:#555;font-size:14px;"></div>
+
 <ul id="result"></ul>
 
 <script>
   async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
-    if (!res.ok) {
-      throw new Error("JSONの読み込みに失敗しました");
-    }
     return await res.json();
   }
 
   async function search() {
     const kw = document.getElementById("keyword").value.trim();
-    const selectedStation = document.getElementById("station").value;
-    const selectedCategory = document.getElementById("category").value;
-    const selectedDay = document.getElementById("day").value;
+    const station = document.getElementById("station").value;
+    const category = document.getElementById("category").value;
+    const day = document.getElementById("day").value;
     const resultEl = document.getElementById("result");
+    const infoEl = document.getElementById("result-info");
 
     resultEl.innerHTML = "<li>検索中...</li>";
+    infoEl.textContent = "";
 
-    try {
-      const data = await loadSponsors();
+    const data = await loadSponsors();
 
-      const filtered = data.filter(r => {
-        const keywordMatch =
-          kw === "" ||
+    const filtered = data.filter(r => {
+      return (
+        (kw === "" ||
           r.program?.includes(kw) ||
           r.station?.includes(kw) ||
-          r.genre?.includes(kw) ||
-          [r.sponsor1, r.sponsor2, r.sponsor3].join(" ").includes(kw) ||
-          r["備考"]?.includes(kw);
+          [r.sponsor1, r.sponsor2, r.sponsor3].join(" ").includes(kw)) &&
+        (station === "" || r.station === station) &&
+        (category === "" || r.genre === category) &&
+        (day === "" || r.day?.includes(day))
+      );
+    });
 
-        const stationMatch =
-          selectedStation === "" || r.station === selectedStation;
-
-        const categoryMatch =
-          selectedCategory === "" || r.genre === selectedCategory;
-
-        const dayMatch =
-          selectedDay === "" || r.day?.includes(selectedDay);
-
-        return keywordMatch && stationMatch && categoryMatch && dayMatch;
-      });
-
-      if (filtered.length === 0) {
-        resultEl.innerHTML = "<li>該当なし</li>";
-        return;
-      }
-
-      resultEl.innerHTML = filtered.map(r => `
-        <li>
-          <div class="program">${r.program}</div>
-          <div class="meta">
-            放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
-          </div>
-          <div class="sponsors">
-            スポンサー：
-            ${[r.sponsor1, r.sponsor2, r.sponsor3]
-              .filter(s => s && s !== "-")
-              .join(" / ") || "不明"}
-          </div>
-          ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
-        </li>
-      `).join("");
-
-    } catch (err) {
-      console.error(err);
-      resultEl.innerHTML = "<li>データの読み込みに失敗しました</li>";
+    if (filtered.length === 0) {
+      resultEl.innerHTML = "<li>該当なし</li>";
+      infoEl.textContent = "検索結果：0件";
+      return;
     }
+
+    infoEl.textContent = `検索結果：${filtered.length}件`;
+
+    resultEl.innerHTML = filtered.map(r => `
+      <li>
+        <div class="program">${r.program}</div>
+        <div class="meta">
+          放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
+        </div>
+        <div class="sponsors">
+          スポンサー：
+          ${[r.sponsor1, r.sponsor2, r.sponsor3].filter(s => s && s !== "-").join(" / ") || "不明"}
+        </div>
+        ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
+      </li>
+    `).join("");
   }
 </script>
 
