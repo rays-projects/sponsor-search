@@ -73,13 +73,27 @@
 <div class="search-box">
   <input type="text" id="keyword" placeholder="番組名・スポンサー名・放送局などで検索">
 
+  <!-- ジャンル -->
   <select id="category">
     <option value="">すべてのジャンル</option>
     <option value="バラエティ">バラエティ</option>
     <option value="ドラマ">ドラマ</option>
     <option value="情報番組">情報番組</option>
     <option value="ニュース">ニュース</option>
+    <option value="報道">報道</option>
+    <option value="アニメ">アニメ</option>
     <option value="教育">教育</option>
+  </select>
+
+  <!-- ★ 放送局（今回追加） -->
+  <select id="station">
+    <option value="">すべての放送局</option>
+    <option value="日本テレビ">日本テレビ</option>
+    <option value="TBS">TBS</option>
+    <option value="フジテレビ">フジテレビ</option>
+    <option value="テレビ朝日">テレビ朝日</option>
+    <option value="NHK総合">NHK総合</option>
+    <option value="NHK教育（Eテレ）">NHK教育（Eテレ）</option>
   </select>
 
   <button onclick="search()">検索</button>
@@ -94,15 +108,10 @@
     return await res.json();
   }
 
-  function buildSponsorList(r) {
-    return [r.sponsor1, r.sponsor2, r.sponsor3]
-      .filter(s => s && s !== "-" && s !== "広告なし")
-      .join(" / ") || "不明";
-  }
-
   async function search() {
     const kw = document.getElementById("keyword").value.trim();
     const selectedCategory = document.getElementById("category").value;
+    const selectedStation = document.getElementById("station").value;
     const resultEl = document.getElementById("result");
 
     resultEl.innerHTML = "<li>検索中...</li>";
@@ -111,20 +120,23 @@
       const data = await loadSponsors();
 
       const filtered = data.filter(r => {
-        const text = [
-          r.program,
-          r.station,
-          r.genre,
-          r.sponsor1,
-          r.sponsor2,
-          r.sponsor3,
-          r["備考"]
-        ].join(" ");
+        const keywordMatch =
+          kw === "" ||
+          r.program?.includes(kw) ||
+          r.station?.includes(kw) ||
+          r.genre?.includes(kw) ||
+          Object.keys(r)
+            .filter(k => k.startsWith("sponsor"))
+            .some(k => r[k]?.includes(kw)) ||
+          r["備考"]?.includes(kw);
 
-        const keywordMatch = kw === "" || text.includes(kw);
-        const categoryMatch = selectedCategory === "" || r.genre === selectedCategory;
+        const categoryMatch =
+          selectedCategory === "" || r.genre === selectedCategory;
 
-        return keywordMatch && categoryMatch;
+        const stationMatch =
+          selectedStation === "" || r.station === selectedStation;
+
+        return keywordMatch && categoryMatch && stationMatch;
       });
 
       if (filtered.length === 0) {
@@ -132,18 +144,25 @@
         return;
       }
 
-      resultEl.innerHTML = filtered.map(r => `
-        <li>
-          <div class="program">${r.program}</div>
-          <div class="meta">
-            放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
-          </div>
-          <div class="sponsors">
-            スポンサー：${buildSponsorList(r)}
-          </div>
-          ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
-        </li>
-      `).join("");
+      resultEl.innerHTML = filtered.map(r => {
+        const sponsors = Object.keys(r)
+          .filter(k => k.startsWith("sponsor"))
+          .map(k => r[k])
+          .filter(v => v && v !== "-" && !v.includes("なし"));
+
+        return `
+          <li>
+            <div class="program">${r.program}</div>
+            <div class="meta">
+              放送局：${r.station} ／ ${r.day} ${r.time} ／ ${r.genre}
+            </div>
+            <div class="sponsors">
+              スポンサー：${sponsors.length ? sponsors.join(" / ") : "なし"}
+            </div>
+            ${r["備考"] ? `<div class="meta">メモ：${r["備考"]}</div>` : ""}
+          </li>
+        `;
+      }).join("");
 
     } catch (err) {
       console.error(err);
