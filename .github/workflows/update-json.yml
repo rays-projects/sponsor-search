@@ -11,23 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ① リポジトリをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Download JSON from Google Drive
+      # ② Google Drive から JSON を取得
+      - name: Download sponsors.json from Google Drive
         run: |
           echo "Downloading sponsors.json from Google Drive..."
           curl -L \
             -o data/sponsors.json \
             "https://drive.google.com/uc?export=download&id=${{ secrets.GDRIVE_FILE_ID }}"
 
-      - name: Commit and push changes
+      # ③ 差分があるときだけ commit & push（事故防止）
+      - name: Commit and push changes safely
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
+          # JSON だけをステージング
           git add data/sponsors.json
 
-          git commit -m "Auto-update sponsors.json" || echo "No changes to commit"
+          # 差分が無ければ何もしない（← 超重要）
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
 
+          git commit -m "Auto-update sponsors.json"
           git push
