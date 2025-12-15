@@ -96,12 +96,18 @@
   <button onclick="search()">検索</button>
 </div>
 
-<!-- ★ 検索結果件数 -->
 <div id="result-info" style="max-width:800px;margin:0 auto 10px;color:#555;font-size:14px;"></div>
 
 <ul id="result"></ul>
 
 <script>
+  function timeToNumber(timeStr) {
+    if (!timeStr) return 9999;
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return 9999;
+    return parseInt(match[1]) * 100 + parseInt(match[2]);
+  }
+
   async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
     return await res.json();
@@ -120,7 +126,7 @@
 
     const data = await loadSponsors();
 
-    const filtered = data.filter(r => {
+    let filtered = data.filter(r => {
       return (
         (kw === "" ||
           r.program?.includes(kw) ||
@@ -132,13 +138,18 @@
       );
     });
 
+    // ★ 時間帯でソート
+    filtered.sort((a, b) => {
+      return timeToNumber(a.time) - timeToNumber(b.time);
+    });
+
     if (filtered.length === 0) {
       resultEl.innerHTML = "<li>該当なし</li>";
       infoEl.textContent = "検索結果：0件";
       return;
     }
 
-    infoEl.textContent = `検索結果：${filtered.length}件`;
+    infoEl.textContent = `検索結果：${filtered.length}件（時間順）`;
 
     resultEl.innerHTML = filtered.map(r => `
       <li>
