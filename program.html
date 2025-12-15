@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>番組詳細</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 16px;
+    }
+
+    .card {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    .meta {
+      color: #555;
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .tag {
+      background: #e3f2fd;
+      color: #0d47a1;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+
+    .back {
+      margin-top: 20px;
+      display: inline-block;
+      text-decoration: none;
+      color: #1976d2;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="content">
+  読み込み中…
+</div>
+
+<script>
+  async function loadData() {
+    const res = await fetch("./data/sponsors.json");
+    return await res.json();
+  }
+
+  function getId() {
+    const params = new URLSearchParams(window.location.search);
+    return Number(params.get("id"));
+  }
+
+  async function render() {
+    const id = getId();
+    const data = await loadData();
+    const r = data.find(d => d.id === id);
+
+    if (!r) {
+      content.innerHTML = "番組が見つかりません";
+      return;
+    }
+
+    const sponsors = [r.sponsor1, r.sponsor2, r.sponsor3]
+      .filter(s => s && s !== "-" && !s.includes("なし"));
+
+    content.innerHTML = `
+      <h1>${r.program}</h1>
+      <div class="meta">放送局：${r.station}</div>
+      <div class="meta">放送時間：${r.day} ${r.time}</div>
+      <div class="meta">ジャンル：${r.genre}</div>
+
+      <h3>スポンサー</h3>
+      <div class="tags">
+        ${sponsors.map(s => `<span class="tag">${s}</span>`).join("")}
+      </div>
+
+      ${r.備考 ? `<h3>備考</h3><p>${r.備考}</p>` : ""}
+
+      <a href="./index.html" class="back">← 検索に戻る</a>
+    `;
+  }
+
+  render();
+</script>
+
+</body>
+</html>
