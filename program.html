@@ -11,6 +11,13 @@
       background: #f7f7f7;
       margin: 0;
       padding: 16px;
+      transition: background .2s, color .2s;
+    }
+
+    /* 🌙 ダークモード */
+    body.dark {
+      background: #0f172a;
+      color: #e5e7eb;
     }
 
     .container {
@@ -20,6 +27,12 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      transition: background .2s;
+    }
+
+    body.dark .container {
+      background: #1e293b;
+      box-shadow: none;
     }
 
     h1 {
@@ -30,6 +43,10 @@
       margin: 8px 0;
       color: #555;
       font-size: 14px;
+    }
+
+    body.dark .meta {
+      color: #cbd5f5;
     }
 
     .sponsors {
@@ -45,12 +62,37 @@
       font-size: 14px;
     }
 
+    body.dark .back {
+      color: #93c5fd;
+    }
+
     .back:hover {
       text-decoration: underline;
+    }
+
+    /* 🌙 テーマ切り替えボタン */
+    .theme-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    body.dark .theme-btn {
+      background: #1e293b;
+      color: #e5e7eb;
+      border-color: #334155;
     }
   </style>
 </head>
 <body>
+
+<button id="themeToggle" class="theme-btn">🌙 ダークモード</button>
 
 <div class="container">
 
@@ -62,6 +104,22 @@
 </div>
 
 <script>
+  /* 🌙 ダークモード制御（index.htmlと共通） */
+  const toggleBtn = document.getElementById("themeToggle");
+
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+    toggleBtn.textContent = "☀️ ライトモード";
+  }
+
+  toggleBtn.onclick = () => {
+    document.body.classList.toggle("dark");
+    const dark = document.body.classList.contains("dark");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+    toggleBtn.textContent = dark ? "☀️ ライトモード" : "🌙 ダークモード";
+  };
+
+  /* 番組詳細ロジック */
   async function loadSponsors() {
     const res = await fetch("./data/sponsors.json");
     if (!res.ok) {
