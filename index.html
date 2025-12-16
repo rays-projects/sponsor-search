@@ -1,38 +1,26 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>番組スポンサー検索</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    /* ======================
-       ベース（ライトモード）
-    ====================== */
     body {
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f4f4f4;
-      color: #111827;
       margin: 0;
       padding: 16px;
-      transition: background 0.2s, color 0.2s;
+      transition: background .2s, color .2s;
+    }
+
+    body.dark {
+      background: #0f172a;
+      color: #e5e7eb;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 16px;
-    }
-
-    /* テーマ切り替えボタン */
-    .theme-btn {
-      display: block;
-      margin: 0 auto 12px;
-      padding: 6px 14px;
-      font-size: 13px;
-      border-radius: 20px;
-      border: none;
-      cursor: pointer;
-      background: #e0e7ff;
     }
 
     .search-box {
@@ -48,38 +36,47 @@
       font-size: 14px;
     }
 
-    .selected-box {
-      max-width: 800px;
-      margin: 0 auto 12px;
-      padding: 8px 12px;
-      background: #eef2ff;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .selected-box span {
-      display: inline-block;
-      margin-right: 6px;
-      margin-bottom: 4px;
-      padding: 2px 8px;
-      background: #6366f1;
-      color: #fff;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .clear-btn {
-      margin-left: 8px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
     .count {
       max-width: 800px;
       margin: 0 auto 8px;
       font-size: 14px;
       color: #555;
+    }
+
+    body.dark .count {
+      color: #cbd5f5;
+    }
+
+    .tags {
+      max-width: 800px;
+      margin: 0 auto 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e0e7ff;
+      color: #1e3a8a;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tag.active {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    body.dark .tag {
+      background: #334155;
+      color: #e5e7eb;
+    }
+
+    body.dark .tag.active {
+      background: #3b82f6;
     }
 
     ul {
@@ -96,11 +93,20 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background .2s;
     }
 
     li:hover {
       background: #f0f7ff;
+    }
+
+    body.dark li {
+      background: #1e293b;
+      box-shadow: none;
+    }
+
+    body.dark li:hover {
+      background: #334155;
     }
 
     .program {
@@ -114,80 +120,42 @@
       margin-top: 4px;
     }
 
-    .sponsor-tag {
-      display: inline-block;
-      margin-right: 6px;
-      margin-bottom: 4px;
-      padding: 2px 8px;
-      background: #eef2ff;
-      border-radius: 12px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .sponsor-tag.active {
-      background: #6366f1;
-      color: #fff;
-    }
-
-    /* ======================
-       🌙 ダークモード
-    ====================== */
-    body.dark {
-      background: #0f172a;
-      color: #e5e7eb;
-    }
-
-    body.dark .theme-btn {
-      background: #334155;
-      color: #e5e7eb;
-    }
-
-    body.dark input,
-    body.dark select {
-      background: #020617;
-      color: #e5e7eb;
-      border: 1px solid #334155;
-    }
-
-    body.dark .count,
     body.dark .meta {
       color: #cbd5f5;
     }
 
-    body.dark .selected-box {
+    .sponsors {
+      margin-top: 6px;
+      font-size: 14px;
+    }
+
+    .theme-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    body.dark .theme-btn {
       background: #1e293b;
-    }
-
-    body.dark li {
-      background: #1e293b;
-      box-shadow: none;
-    }
-
-    body.dark li:hover {
-      background: #273449;
-    }
-
-    body.dark .sponsor-tag {
-      background: #334155;
       color: #e5e7eb;
-    }
-
-    body.dark .sponsor-tag.active {
-      background: #6366f1;
-      color: #fff;
+      border-color: #334155;
     }
   </style>
 </head>
-
 <body>
-
-<h1>番組スポンサー検索</h1>
 
 <button id="themeToggle" class="theme-btn">🌙 ダークモード</button>
 
+<h1>番組スポンサー検索</h1>
+
 <div class="search-box">
-  <input id="keyword" type="text" placeholder="番組名・スポンサー名で検索" />
+  <input type="text" id="keyword" placeholder="番組名・スポンサー名で検索">
   <select id="dayFilter">
     <option value="">すべての曜日</option>
     <option value="月">月</option>
@@ -200,99 +168,13 @@
   </select>
 </div>
 
-<div class="selected-box" id="selectedSponsors"></div>
+<div class="tags" id="sponsorTags"></div>
+
 <div class="count" id="count"></div>
 <ul id="results"></ul>
 
 <script>
-  let programs = [];
-  let selectedSponsors = new Set();
-
-  async function loadData() {
-    const res = await fetch("./data/sponsors.json");
-    programs = await res.json();
-    render();
-  }
-
-  function getSponsors(p) {
-    return [p.sponsor1, p.sponsor2, p.sponsor3].filter(s => s && s !== "-");
-  }
-
-  function render() {
-    const keyword = keywordInput.value.toLowerCase();
-    const day = dayFilter.value;
-
-    const filtered = programs.filter(p => {
-      const sponsors = getSponsors(p);
-
-      const keywordMatch =
-        !keyword ||
-        p.program.toLowerCase().includes(keyword) ||
-        sponsors.some(s => s.toLowerCase().includes(keyword));
-
-      const sponsorMatch =
-        selectedSponsors.size === 0 ||
-        sponsors.some(s => selectedSponsors.has(s));
-
-      const dayMatch = !day || p.day.includes(day);
-
-      return keywordMatch && sponsorMatch && dayMatch;
-    });
-
-    count.textContent = `${filtered.length} 件の番組が見つかりました`;
-
-    selectedSponsorsBox.innerHTML =
-      selectedSponsors.size === 0
-        ? ""
-        : `選択中スポンサー：
-          ${[...selectedSponsors].map(s => `<span data-sponsor="${s}">#${s}</span>`).join("")}
-          <span class="clear-btn" id="clearSponsors">すべて解除</span>`;
-
-    results.innerHTML = filtered.map(p => `
-      <li onclick="location.href='program.html?id=${p.id}'">
-        <div class="program">${p.program}</div>
-        <div class="meta">放送局：${p.station} ／ ${p.day} ${p.time}</div>
-        <div class="meta">
-          スポンサー：
-          ${getSponsors(p).map(s =>
-            `<span class="sponsor-tag ${selectedSponsors.has(s) ? "active" : ""}" data-sponsor="${s}">#${s}</span>`
-          ).join("")}
-        </div>
-      </li>
-    `).join("");
-
-    document.querySelectorAll(".sponsor-tag").forEach(tag => {
-      tag.onclick = e => {
-        e.stopPropagation();
-        const s = tag.dataset.sponsor;
-        selectedSponsors.has(s) ? selectedSponsors.delete(s) : selectedSponsors.add(s);
-        render();
-      };
-    });
-
-    document.querySelectorAll("#selectedSponsors span[data-sponsor]").forEach(tag => {
-      tag.onclick = () => {
-        selectedSponsors.delete(tag.dataset.sponsor);
-        render();
-      };
-    });
-
-    document.getElementById("clearSponsors")?.addEventListener("click", () => {
-      selectedSponsors.clear();
-      render();
-    });
-  }
-
-  const keywordInput = document.getElementById("keyword");
-  const dayFilter = document.getElementById("dayFilter");
-  const count = document.getElementById("count");
-  const results = document.getElementById("results");
-  const selectedSponsorsBox = document.getElementById("selectedSponsors");
-
-  keywordInput.oninput = render;
-  dayFilter.onchange = render;
-
-  /* 🌙 ダークモード制御 */
+  /* 🌙 ダークモード */
   const toggleBtn = document.getElementById("themeToggle");
 
   if (localStorage.getItem("theme") === "dark") {
@@ -306,6 +188,119 @@
     localStorage.setItem("theme", dark ? "dark" : "light");
     toggleBtn.textContent = dark ? "☀️ ライトモード" : "🌙 ダークモード";
   };
+
+  /* データ */
+  let programs = [];
+  let activeSponsors = new Set();
+
+  const keywordInput = document.getElementById("keyword");
+  const daySelect = document.getElementById("dayFilter");
+
+  function updateURL() {
+    const params = new URLSearchParams();
+
+    if (keywordInput.value) params.set("keyword", keywordInput.value);
+    if (daySelect.value) params.set("day", daySelect.value);
+    if (activeSponsors.size > 0) {
+      params.set("sponsor", [...activeSponsors].join(","));
+    }
+
+    history.replaceState(null, "", "?" + params.toString());
+  }
+
+  function restoreFromURL() {
+    const params = new URLSearchParams(location.search);
+
+    if (params.get("keyword")) {
+      keywordInput.value = params.get("keyword");
+    }
+
+    if (params.get("day")) {
+      daySelect.value = params.get("day");
+    }
+
+    if (params.get("sponsor")) {
+      params.get("sponsor").split(",").forEach(s => activeSponsors.add(s));
+    }
+  }
+
+  async function loadData() {
+    const res = await fetch("./data/sponsors.json");
+    programs = await res.json();
+    restoreFromURL();
+    renderTags();
+    render();
+  }
+
+  function getSponsors(p) {
+    return [p.sponsor1, p.sponsor2, p.sponsor3].filter(s => s && s !== "-");
+  }
+
+  function renderTags() {
+    const allSponsors = [...new Set(programs.flatMap(getSponsors))];
+    const tagBox = document.getElementById("sponsorTags");
+
+    tagBox.innerHTML = allSponsors.map(s => `
+      <div class="tag ${activeSponsors.has(s) ? "active" : ""}" data-name="${s}">
+        ${s}
+      </div>
+    `).join("");
+
+    document.querySelectorAll(".tag").forEach(tag => {
+      tag.onclick = () => {
+        const name = tag.dataset.name;
+        activeSponsors.has(name) ? activeSponsors.delete(name) : activeSponsors.add(name);
+        updateURL();
+        renderTags();
+        render();
+      };
+    });
+  }
+
+  function render() {
+    const keyword = keywordInput.value.toLowerCase();
+    const day = daySelect.value;
+
+    const filtered = programs.filter(p => {
+      const sponsors = getSponsors(p);
+
+      const textMatch =
+        p.program.toLowerCase().includes(keyword) ||
+        sponsors.some(s => s.toLowerCase().includes(keyword));
+
+      const dayMatch = !day || p.day.includes(day);
+      const sponsorMatch =
+        activeSponsors.size === 0 ||
+        sponsors.some(s => activeSponsors.has(s));
+
+      return textMatch && dayMatch && sponsorMatch;
+    });
+
+    document.getElementById("count").textContent =
+      `${filtered.length} 件の番組が見つかりました`;
+
+    document.getElementById("results").innerHTML = filtered.map(p => `
+      <li onclick="location.href='program.html?id=${p.id}'">
+        <div class="program">${p.program}</div>
+        <div class="meta">
+          放送局：${p.station} ／ ${p.day} ${p.time} ／ ${p.genre}
+        </div>
+        <div class="sponsors">
+          スポンサー：${getSponsors(p).join(" / ") || "不明"}
+        </div>
+      </li>
+    `).join("");
+  }
+
+  keywordInput.addEventListener("input", () => {
+    updateURL();
+    render();
+  });
+
+  daySelect.addEventListener("change", () => {
+    updateURL();
+    render();
+  });
 
   loadData();
 </script>
