@@ -6,9 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
+    /* ======================
+       ベース（ライトモード）
+    ====================== */
     body {
       font-family: system-ui, sans-serif;
       background: #f4f4f4;
+      color: #111827;
       margin: 0;
       padding: 16px;
       transition: background 0.2s, color 0.2s;
@@ -19,7 +23,7 @@
       margin-bottom: 16px;
     }
 
-    /* 🔘 テーマ切り替えボタン */
+    /* テーマ切り替えボタン */
     .theme-btn {
       display: block;
       margin: 0 auto 12px;
@@ -126,15 +130,17 @@
       color: #fff;
     }
 
-    /* 🌙 ダークモード */
+    /* ======================
+       🌙 ダークモード
+    ====================== */
     body.dark {
       background: #0f172a;
       color: #e5e7eb;
     }
 
-    body.dark li {
-      background: #1e293b;
-      box-shadow: none;
+    body.dark .theme-btn {
+      background: #334155;
+      color: #e5e7eb;
     }
 
     body.dark input,
@@ -144,8 +150,8 @@
       border: 1px solid #334155;
     }
 
-    body.dark .meta,
-    body.dark .count {
+    body.dark .count,
+    body.dark .meta {
       color: #cbd5f5;
     }
 
@@ -153,9 +159,23 @@
       background: #1e293b;
     }
 
-    body.dark .theme-btn {
+    body.dark li {
+      background: #1e293b;
+      box-shadow: none;
+    }
+
+    body.dark li:hover {
+      background: #273449;
+    }
+
+    body.dark .sponsor-tag {
       background: #334155;
       color: #e5e7eb;
+    }
+
+    body.dark .sponsor-tag.active {
+      background: #6366f1;
+      color: #fff;
     }
   </style>
 </head>
@@ -181,7 +201,6 @@
 </div>
 
 <div class="selected-box" id="selectedSponsors"></div>
-
 <div class="count" id="count"></div>
 <ul id="results"></ul>
 
@@ -205,6 +224,7 @@
 
     const filtered = programs.filter(p => {
       const sponsors = getSponsors(p);
+
       const keywordMatch =
         !keyword ||
         p.program.toLowerCase().includes(keyword) ||
@@ -225,8 +245,8 @@
       selectedSponsors.size === 0
         ? ""
         : `選択中スポンサー：
-        ${[...selectedSponsors].map(s => `<span data-sponsor="${s}">#${s}</span>`).join("")}
-        <span class="clear-btn" id="clearSponsors">すべて解除</span>`;
+          ${[...selectedSponsors].map(s => `<span data-sponsor="${s}">#${s}</span>`).join("")}
+          <span class="clear-btn" id="clearSponsors">すべて解除</span>`;
 
     results.innerHTML = filtered.map(p => `
       <li onclick="location.href='program.html?id=${p.id}'">
