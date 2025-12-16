@@ -78,6 +78,34 @@
       background: #6366f1;
       color: #fff;
     }
+
+    .selected-box {
+      max-width: 800px;
+      margin: 0 auto 12px;
+      font-size: 14px;
+    }
+
+    .selected-box span {
+      display: inline-block;
+      margin-right: 6px;
+      margin-bottom: 4px;
+      padding: 2px 8px;
+      background: #6366f1;
+      color: #fff;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .selected-box span:hover {
+      opacity: 0.8;
+    }
+
+    .clear-btn {
+      margin-left: 8px;
+      font-size: 12px;
+      color: #1976d2;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -85,6 +113,8 @@
 <h1>番組スポンサー検索</h1>
 
 <div class="search-box">
+</div>
+<div class="selected-box" id="selectedSponsors"></div>
   <input id="keyword" type="text" placeholder="番組名・スポンサー名で検索" />
   <select id="dayFilter">
     <option value="">すべての曜日</option>
@@ -138,6 +168,32 @@
 
     document.getElementById("count").textContent =
       `${filtered.length} 件の番組が見つかりました`;
+
+    const selectedBox = document.getElementById("selectedSponsors");
+
+    if (selectedSponsors.size === 0) {
+      selectedBox.innerHTML = "";
+    } else {
+      selectedBox.innerHTML = `
+        選択中スポンサー：
+        ${[...selectedSponsors].map(s =>
+          `<span data-sponsor="${s}">#${s}</span>`
+        ).join("")}
+        <span class="clear-btn" id="clearSponsors">すべて解除</span>
+      `;
+
+      selectedBox.querySelectorAll("span[data-sponsor]").forEach(tag => {
+        tag.addEventListener("click", () => {
+          selectedSponsors.delete(tag.dataset.sponsor);
+          render();
+        });
+      });
+
+      document.getElementById("clearSponsors").addEventListener("click", () => {
+        selectedSponsors.clear();
+        render();
+      });
+    }
 
     document.getElementById("results").innerHTML = filtered.map(p => `
       <li onclick="location.href='program.html?id=${p.id}'">
