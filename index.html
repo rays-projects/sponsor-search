@@ -74,6 +74,10 @@
     .sponsor-tag:hover {
       background: #dbe4ff;
     }
+    .sponsor-tag.active {
+      background: #6366f1;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -99,6 +103,7 @@
 
 <script>
   let programs = [];
+  let selectedSponsors = new Set();
 
   async function loadData() {
     const res = await fetch("./data/sponsors.json");
@@ -115,12 +120,20 @@
     const day = document.getElementById("dayFilter").value;
 
     const filtered = programs.filter(p => {
-      const textMatch =
+      const sponsors = getSponsors(p);
+
+      const keywordMatch =
+        !keyword ||
         p.program.toLowerCase().includes(keyword) ||
-        getSponsors(p).some(s => s.toLowerCase().includes(keyword));
+        sponsors.some(s => s.toLowerCase().includes(keyword));
+
+      const sponsorTagMatch =
+        selectedSponsors.size === 0 ||
+        sponsors.some(s => selectedSponsors.has(s));
 
       const dayMatch = !day || p.day.includes(day);
-      return textMatch && dayMatch;
+
+      return keywordMatch && sponsorTagMatch && dayMatch;
     });
 
     document.getElementById("count").textContent =
@@ -133,7 +146,12 @@
         <div class="sponsors">
           スポンサー：
           ${getSponsors(p).map(s =>
-            `<span class="sponsor-tag" data-sponsor="${s}">#${s}</span>`
+            `<span
+              class="sponsor-tag ${selectedSponsors.has(s) ? "active" : ""}"
+              data-sponsor="${s}"
+            >
+              #${s}
+            </span>`
           ).join(" ") || "不明"}
         </div>
       </li>
@@ -142,7 +160,14 @@
     document.querySelectorAll(".sponsor-tag").forEach(tag => {
       tag.addEventListener("click", e => {
         e.stopPropagation();
-        document.getElementById("keyword").value = tag.dataset.sponsor;
+        const sponsor = tag.dataset.sponsor;
+
+        if (selectedSponsors.has(sponsor)) {
+          selectedSponsors.delete(sponsor);
+        } else {
+          selectedSponsors.add(sponsor);
+        }
+
         render();
       });
     });
