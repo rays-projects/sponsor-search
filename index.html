@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>番組スポンサー検索</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -11,33 +12,39 @@
       margin: 0;
       padding: 16px;
     }
+
     h1 {
       text-align: center;
       margin-bottom: 16px;
     }
+
     .search-box {
       max-width: 800px;
       margin: 0 auto 12px;
       display: flex;
       gap: 8px;
     }
+
     input, select {
       flex: 1;
       padding: 8px;
       font-size: 14px;
     }
+
     .count {
       max-width: 800px;
       margin: 0 auto 8px;
       font-size: 14px;
       color: #555;
     }
+
     ul {
       max-width: 800px;
       margin: 0 auto;
       padding: 0;
       list-style: none;
     }
+
     li {
       background: #fff;
       margin-bottom: 12px;
@@ -46,42 +53,55 @@
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
       cursor: pointer;
     }
+
     li:hover {
       background: #f0f7ff;
     }
+
     .program {
       font-size: 18px;
       font-weight: bold;
     }
+
     .meta {
       font-size: 14px;
       color: #555;
       margin-top: 4px;
     }
+
     .sponsors {
       margin-top: 6px;
       font-size: 14px;
     }
+
+    /* スポンサータグ */
     .sponsor-tag {
       display: inline-block;
       margin-right: 6px;
+      margin-bottom: 4px;
       padding: 2px 8px;
       background: #eef2ff;
       border-radius: 12px;
       font-size: 12px;
       cursor: pointer;
     }
+
     .sponsor-tag:hover {
       background: #dbe4ff;
     }
+
     .sponsor-tag.active {
       background: #6366f1;
       color: #fff;
     }
 
+    /* 🔹 STEP1：選択中スポンサー表示 */
     .selected-box {
       max-width: 800px;
       margin: 0 auto 12px;
+      padding: 8px 12px;
+      background: #eef2ff;
+      border-radius: 8px;
       font-size: 14px;
     }
 
@@ -94,6 +114,7 @@
       color: #fff;
       border-radius: 12px;
       cursor: pointer;
+      font-size: 12px;
     }
 
     .selected-box span:hover {
@@ -113,8 +134,6 @@
 <h1>番組スポンサー検索</h1>
 
 <div class="search-box">
-</div>
-<div class="selected-box" id="selectedSponsors"></div>
   <input id="keyword" type="text" placeholder="番組名・スポンサー名で検索" />
   <select id="dayFilter">
     <option value="">すべての曜日</option>
@@ -127,6 +146,8 @@
     <option value="日">日</option>
   </select>
 </div>
+
+<div class="selected-box" id="selectedSponsors"></div>
 
 <div class="count" id="count"></div>
 <ul id="results"></ul>
@@ -157,13 +178,13 @@
         p.program.toLowerCase().includes(keyword) ||
         sponsors.some(s => s.toLowerCase().includes(keyword));
 
-      const sponsorTagMatch =
+      const sponsorMatch =
         selectedSponsors.size === 0 ||
         sponsors.some(s => selectedSponsors.has(s));
 
       const dayMatch = !day || p.day.includes(day);
 
-      return keywordMatch && sponsorTagMatch && dayMatch;
+      return keywordMatch && sponsorMatch && dayMatch;
     });
 
     document.getElementById("count").textContent =
@@ -205,10 +226,8 @@
             `<span
               class="sponsor-tag ${selectedSponsors.has(s) ? "active" : ""}"
               data-sponsor="${s}"
-            >
-              #${s}
-            </span>`
-          ).join(" ") || "不明"}
+            >#${s}</span>`
+          ).join(" ")}
         </div>
       </li>
     `).join("");
@@ -223,7 +242,6 @@
         } else {
           selectedSponsors.add(sponsor);
         }
-
         render();
       });
     });
