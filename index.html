@@ -21,6 +21,26 @@
 
     h1 {
       text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* 🌙 ダークモードボタン */
+    .theme-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    body.dark .theme-btn {
+      background: #1e293b;
+      color: #e5e7eb;
+      border-color: #334155;
     }
 
     .search-box {
@@ -36,17 +56,7 @@
       font-size: 14px;
     }
 
-    .count {
-      max-width: 800px;
-      margin: 0 auto 8px;
-      font-size: 14px;
-      color: #555;
-    }
-
-    body.dark .count {
-      color: #cbd5f5;
-    }
-
+    /* 🔖 スポンサータグ */
     .tags {
       max-width: 800px;
       margin: 0 auto 12px;
@@ -58,9 +68,8 @@
     .tag {
       padding: 4px 10px;
       border-radius: 999px;
-      background: #e0e7ff;
-      color: #1e3a8a;
       font-size: 13px;
+      background: #e5e7eb;
       cursor: pointer;
       user-select: none;
     }
@@ -79,6 +88,15 @@
       background: #3b82f6;
     }
 
+    /* 🔍 検索見出し */
+    .search-summary {
+      max-width: 800px;
+      margin: 16px auto 6px;
+      font-size: 15px;
+      font-weight: 600;
+      opacity: .9;
+    }
+
     ul {
       max-width: 800px;
       margin: 0 auto;
@@ -93,20 +111,11 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
       cursor: pointer;
-      transition: background .2s;
-    }
-
-    li:hover {
-      background: #f0f7ff;
     }
 
     body.dark li {
       background: #1e293b;
       box-shadow: none;
-    }
-
-    body.dark li:hover {
-      background: #334155;
     }
 
     .program {
@@ -116,35 +125,13 @@
 
     .meta {
       font-size: 14px;
-      color: #555;
       margin-top: 4px;
-    }
-
-    body.dark .meta {
-      color: #cbd5f5;
+      opacity: .85;
     }
 
     .sponsors {
       margin-top: 6px;
       font-size: 14px;
-    }
-
-    .theme-btn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      padding: 6px 10px;
-      font-size: 13px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      background: #fff;
-      cursor: pointer;
-    }
-
-    body.dark .theme-btn {
-      background: #1e293b;
-      color: #e5e7eb;
-      border-color: #334155;
     }
   </style>
 </head>
@@ -170,7 +157,9 @@
 
 <div class="tags" id="sponsorTags"></div>
 
-<div class="count" id="count"></div>
+<!-- 🔍 検索条件見出し -->
+<h2 id="searchSummary" class="search-summary"></h2>
+
 <ul id="results"></ul>
 
 <script>
@@ -189,46 +178,13 @@
     toggleBtn.textContent = dark ? "☀️ ライトモード" : "🌙 ダークモード";
   };
 
-  /* データ */
   let programs = [];
-  let activeSponsors = new Set();
-
-  const keywordInput = document.getElementById("keyword");
-  const daySelect = document.getElementById("dayFilter");
-
-  function updateURL() {
-    const params = new URLSearchParams();
-
-    if (keywordInput.value) params.set("keyword", keywordInput.value);
-    if (daySelect.value) params.set("day", daySelect.value);
-    if (activeSponsors.size > 0) {
-      params.set("sponsor", [...activeSponsors].join(","));
-    }
-
-    history.replaceState(null, "", "?" + params.toString());
-  }
-
-  function restoreFromURL() {
-    const params = new URLSearchParams(location.search);
-
-    if (params.get("keyword")) {
-      keywordInput.value = params.get("keyword");
-    }
-
-    if (params.get("day")) {
-      daySelect.value = params.get("day");
-    }
-
-    if (params.get("sponsor")) {
-      params.get("sponsor").split(",").forEach(s => activeSponsors.add(s));
-    }
-  }
+  let selectedSponsors = [];
 
   async function loadData() {
     const res = await fetch("./data/sponsors.json");
     programs = await res.json();
-    restoreFromURL();
-    renderTags();
+    createSponsorTags();
     render();
   }
 
@@ -236,30 +192,50 @@
     return [p.sponsor1, p.sponsor2, p.sponsor3].filter(s => s && s !== "-");
   }
 
-  function renderTags() {
-    const allSponsors = [...new Set(programs.flatMap(getSponsors))];
-    const tagBox = document.getElementById("sponsorTags");
+  function createSponsorTags() {
+    const allSponsors = new Set();
+    programs.forEach(p => getSponsors(p).forEach(s => allSponsors.add(s)));
 
-    tagBox.innerHTML = allSponsors.map(s => `
-      <div class="tag ${activeSponsors.has(s) ? "active" : ""}" data-name="${s}">
-        ${s}
-      </div>
+    const tagEl = document.getElementById("sponsorTags");
+    tagEl.innerHTML = [...allSponsors].sort().map(s => `
+      <span class="tag" data-name="${s}">${s}</span>
     `).join("");
 
-    document.querySelectorAll(".tag").forEach(tag => {
+    tagEl.querySelectorAll(".tag").forEach(tag => {
       tag.onclick = () => {
         const name = tag.dataset.name;
-        activeSponsors.has(name) ? activeSponsors.delete(name) : activeSponsors.add(name);
-        updateURL();
-        renderTags();
+        tag.classList.toggle("active");
+
+        if (selectedSponsors.includes(name)) {
+          selectedSponsors = selectedSponsors.filter(s => s !== name);
+        } else {
+          selectedSponsors.push(name);
+        }
         render();
       };
     });
   }
 
+  function updateSearchSummary(day, count) {
+    const el = document.getElementById("searchSummary");
+
+    let parts = [];
+
+    if (selectedSponsors.length) {
+      parts.push(`スポンサー：${selectedSponsors.join("・")}`);
+    }
+
+    if (day) {
+      parts.push(`${day}曜`);
+    }
+
+    el.textContent =
+      `${parts.length ? parts.join("｜") : "すべての番組"}（${count}件）`;
+  }
+
   function render() {
-    const keyword = keywordInput.value.toLowerCase();
-    const day = daySelect.value;
+    const keyword = document.getElementById("keyword").value.toLowerCase();
+    const day = document.getElementById("dayFilter").value;
 
     const filtered = programs.filter(p => {
       const sponsors = getSponsors(p);
@@ -270,37 +246,30 @@
 
       const dayMatch = !day || p.day.includes(day);
       const sponsorMatch =
-        activeSponsors.size === 0 ||
-        sponsors.some(s => activeSponsors.has(s));
+        !selectedSponsors.length ||
+        selectedSponsors.some(s => sponsors.includes(s));
 
       return textMatch && dayMatch && sponsorMatch;
     });
 
-    document.getElementById("count").textContent =
-      `${filtered.length} 件の番組が見つかりました`;
+    updateSearchSummary(day, filtered.length);
 
-    document.getElementById("results").innerHTML = filtered.map(p => `
-      <li onclick="location.href='program.html?id=${p.id}'">
-        <div class="program">${p.program}</div>
-        <div class="meta">
-          放送局：${p.station} ／ ${p.day} ${p.time} ／ ${p.genre}
-        </div>
-        <div class="sponsors">
-          スポンサー：${getSponsors(p).join(" / ") || "不明"}
-        </div>
-      </li>
-    `).join("");
+    document.getElementById("results").innerHTML =
+      filtered.map(p => `
+        <li onclick="location.href='program.html?id=${p.id}'">
+          <div class="program">${p.program}</div>
+          <div class="meta">
+            放送局：${p.station} ／ ${p.day} ${p.time} ／ ${p.genre}
+          </div>
+          <div class="sponsors">
+            スポンサー：${getSponsors(p).join(" / ") || "不明"}
+          </div>
+        </li>
+      `).join("");
   }
 
-  keywordInput.addEventListener("input", () => {
-    updateURL();
-    render();
-  });
-
-  daySelect.addEventListener("change", () => {
-    updateURL();
-    render();
-  });
+  document.getElementById("keyword").addEventListener("input", render);
+  document.getElementById("dayFilter").addEventListener("change", render);
 
   loadData();
 </script>
