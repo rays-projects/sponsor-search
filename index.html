@@ -47,16 +47,12 @@
       display: inline-block;
       background: #e0e7ff;
       color: #1e3a8a;
-      padding: 4px 10px;
+      padding: 4px 8px;
       margin: 4px;
-      border-radius: 999px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      transition: background .15s, color .15s, box-shadow .15s;
-    }
-
-    .tags span:hover {
-      background: #c7d2fe;
+      transition: transform .1s;
     }
 
     body.dark .tags span {
@@ -64,29 +60,17 @@
       color: #e5e7eb;
     }
 
-    body.dark .tags span:hover {
-      background: #475569;
-    }
-
-    /* ★ 選択中（ここを強化） */
     .tags span.active {
       background: #2563eb;
-      color: #ffffff;
-      box-shadow: 0 0 0 2px rgba(37,99,235,.35);
-    }
-
-    body.dark .tags span.active {
-      background: #3b82f6;
-      color: #ffffff;
-      box-shadow: 0 0 0 2px rgba(147,197,253,.4);
+      color: #fff;
     }
 
     .selected {
       margin-top: 8px;
       font-size: 14px;
-      opacity: .9;
     }
 
+    /* ===== 検索結果 ===== */
     .program {
       padding: 12px 0;
       border-bottom: 1px solid #ddd;
@@ -94,6 +78,16 @@
 
     body.dark .program {
       border-color: #334155;
+    }
+
+    .match {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #2563eb;
+    }
+
+    body.dark .match {
+      color: #93c5fd;
     }
 
     a {
@@ -105,6 +99,7 @@
       color: #93c5fd;
     }
 
+    /* ===== ダーク切替 ===== */
     .theme-btn {
       position: fixed;
       top: 16px;
@@ -170,9 +165,7 @@
   function restoreFromURL() {
     const params = new URLSearchParams(location.search);
     const s = params.get("sponsor");
-    if (s) {
-      selectedSponsors = s.split(",");
-    }
+    if (s) selectedSponsors = s.split(",");
   }
 
   /* ===== データ取得 ===== */
@@ -193,16 +186,13 @@
     sponsors.forEach(name => {
       const span = document.createElement("span");
       span.textContent = name;
-      if (selectedSponsors.includes(name)) {
-        span.classList.add("active");
-      }
+      if (selectedSponsors.includes(name)) span.classList.add("active");
 
       span.onclick = () => {
-        if (selectedSponsors.includes(name)) {
-          selectedSponsors = selectedSponsors.filter(s => s !== name);
-        } else {
-          selectedSponsors.push(name);
-        }
+        selectedSponsors = selectedSponsors.includes(name)
+          ? selectedSponsors.filter(s => s !== name)
+          : [...selectedSponsors, name];
+
         updateURL();
         renderTags();
         renderResults();
@@ -235,12 +225,22 @@
       return;
     }
 
-    area.innerHTML = filtered.map(p => `
-      <div class="program">
-        <strong><a href="program.html?id=${p.id}">${p.program}</a></strong><br>
-        ${p.station} / ${p.day} ${p.time}
-      </div>
-    `).join("");
+    area.innerHTML = filtered.map(p => {
+      const sponsors = [p.sponsor1, p.sponsor2, p.sponsor3].filter(s => s && s !== "-");
+      const matched = sponsors.filter(s => selectedSponsors.includes(s));
+
+      return `
+        <div class="program">
+          <strong><a href="program.html?id=${p.id}">${p.program}</a></strong><br>
+          ${p.station} / ${p.day} ${p.time}
+          ${matched.length ? `
+            <div class="match">
+              一致スポンサー：${matched.join(" / ")}
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("");
   }
 
   /* ===== 初期化 ===== */
