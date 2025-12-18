@@ -42,7 +42,7 @@
       box-shadow: none;
     }
 
-    /* ===== タグ ===== */
+    /* ===== スポンサータグ ===== */
     .tags span {
       display: inline-block;
       background: #e0e7ff;
@@ -52,17 +52,29 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      transition: transform .1s;
+      transition: transform .12s ease, background .15s ease;
     }
 
+    .tags span:hover {
+      transform: scale(0.98);
+    }
+
+    /* ライトモード active */
+    .tags span.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    /* ダークモード 通常 */
     body.dark .tags span {
       background: #334155;
       color: #e5e7eb;
     }
 
-    .tags span.active {
-      background: #2563eb;
-      color: #fff;
+    /* ダークモード active（重要） */
+    body.dark .tags span.active {
+      background: #3b82f6;
+      color: #ffffff;
     }
 
     .selected {
@@ -99,7 +111,7 @@
       color: #93c5fd;
     }
 
-    /* ===== ダーク切替 ===== */
+    /* ===== ダークモード切替 ===== */
     .theme-btn {
       position: fixed;
       top: 16px;
@@ -142,6 +154,7 @@
     document.body.classList.add("dark");
     toggleBtn.textContent = "☀️ ライトモード";
   }
+
   toggleBtn.onclick = () => {
     document.body.classList.toggle("dark");
     const dark = document.body.classList.contains("dark");
@@ -183,6 +196,7 @@
     )];
 
     tagArea.innerHTML = "";
+
     sponsors.forEach(name => {
       const span = document.createElement("span");
       span.textContent = name;
@@ -226,12 +240,15 @@
     }
 
     area.innerHTML = filtered.map(p => {
-      const sponsors = [p.sponsor1, p.sponsor2, p.sponsor3].filter(s => s && s !== "-");
+      const sponsors = [p.sponsor1, p.sponsor2, p.sponsor3]
+        .filter(s => s && s !== "-");
       const matched = sponsors.filter(s => selectedSponsors.includes(s));
 
       return `
         <div class="program">
-          <strong><a href="program.html?id=${p.id}">${p.program}</a></strong><br>
+          <strong>
+            <a href="program.html?id=${p.id}">${p.program}</a>
+          </strong><br>
           ${p.station} / ${p.day} ${p.time}
           ${matched.length ? `
             <div class="match">
