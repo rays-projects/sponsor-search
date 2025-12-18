@@ -42,16 +42,17 @@
       box-shadow: none;
     }
 
-    /* ===== スポンサータグ ===== */
-    .tags span {
+    /* ===== タグ共通 ===== */
+    .tags span,
+    .program-tags span {
       display: inline-block;
       background: #e0e7ff;
       color: #1e3a8a;
       padding: 4px 8px;
-      margin: 4px;
+      margin: 4px 4px 0 0;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12px;
       transition:
         transform .12s ease,
         background .15s ease,
@@ -59,28 +60,30 @@
       user-select: none;
     }
 
-    .tags span:hover {
+    .tags span:hover,
+    .program-tags span:hover {
       transform: scale(0.98);
     }
 
-    /* クリック時アニメ */
-    .tags span.tap {
+    .tags span.tap,
+    .program-tags span.tap {
       transform: scale(0.96);
     }
 
-    /* ライトモード active */
-    .tags span.active {
+    .tags span.active,
+    .program-tags span.active {
       background: #2563eb;
       color: #ffffff;
     }
 
-    /* ダークモード */
-    body.dark .tags span {
+    body.dark .tags span,
+    body.dark .program-tags span {
       background: #334155;
       color: #e5e7eb;
     }
 
-    body.dark .tags span.active {
+    body.dark .tags span.active,
+    body.dark .program-tags span.active {
       background: #3b82f6;
       color: #ffffff;
     }
@@ -98,6 +101,10 @@
 
     body.dark .program {
       border-color: #334155;
+    }
+
+    .program-tags {
+      margin-top: 6px;
     }
 
     .match {
@@ -119,7 +126,7 @@
       color: #93c5fd;
     }
 
-    /* ===== ダークモード切替 ===== */
+    /* ===== ダーク切替 ===== */
     .theme-btn {
       position: fixed;
       top: 16px;
@@ -170,11 +177,9 @@
     toggleBtn.textContent = dark ? "☀️ ライトモード" : "🌙 ダークモード";
   };
 
-  /* ===== 状態 ===== */
   let allData = [];
   let selectedSponsors = [];
 
-  /* ===== URL操作 ===== */
   function updateURL() {
     const params = new URLSearchParams();
     if (selectedSponsors.length) {
@@ -189,13 +194,24 @@
     if (s) selectedSponsors = s.split(",");
   }
 
-  /* ===== データ取得 ===== */
   async function loadData() {
     const res = await fetch("./data/sponsors.json");
     allData = await res.json();
   }
 
-  /* ===== タグ生成 ===== */
+  function toggleSponsor(name, el) {
+    el.classList.add("tap");
+    setTimeout(() => el.classList.remove("tap"), 120);
+
+    selectedSponsors = selectedSponsors.includes(name)
+      ? selectedSponsors.filter(s => s !== name)
+      : [...selectedSponsors, name];
+
+    updateURL();
+    renderTags();
+    renderResults();
+  }
+
   function renderTags() {
     const tagArea = document.getElementById("tagArea");
     const sponsors = [...new Set(
@@ -204,26 +220,11 @@
     )];
 
     tagArea.innerHTML = "";
-
     sponsors.forEach(name => {
       const span = document.createElement("span");
       span.textContent = name;
       if (selectedSponsors.includes(name)) span.classList.add("active");
-
-      span.onclick = () => {
-        // 🔥 クリックアニメ
-        span.classList.add("tap");
-        setTimeout(() => span.classList.remove("tap"), 120);
-
-        selectedSponsors = selectedSponsors.includes(name)
-          ? selectedSponsors.filter(s => s !== name)
-          : [...selectedSponsors, name];
-
-        updateURL();
-        renderTags();
-        renderResults();
-      };
-
+      span.onclick = () => toggleSponsor(name, span);
       tagArea.appendChild(span);
     });
 
@@ -233,7 +234,6 @@
         : "スポンサー未選択";
   }
 
-  /* ===== 結果描画 ===== */
   function renderResults() {
     const area = document.getElementById("results");
     let filtered = allData;
@@ -258,10 +258,18 @@
 
       return `
         <div class="program">
-          <strong>
-            <a href="program.html?id=${p.id}">${p.program}</a>
-          </strong><br>
+          <strong><a href="program.html?id=${p.id}">${p.program}</a></strong><br>
           ${p.station} / ${p.day} ${p.time}
+
+          <div class="program-tags">
+            ${sponsors.map(s => `
+              <span class="${selectedSponsors.includes(s) ? "active" : ""}"
+                onclick="toggleSponsor('${s}', this)">
+                ${s}
+              </span>
+            `).join("")}
+          </div>
+
           ${matched.length ? `
             <div class="match">
               一致スポンサー：${matched.join(" / ")}
@@ -272,7 +280,6 @@
     }).join("");
   }
 
-  /* ===== 初期化 ===== */
   (async () => {
     restoreFromURL();
     await loadData();
