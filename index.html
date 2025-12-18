@@ -52,11 +52,20 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      transition: transform .12s ease, background .15s ease;
+      transition:
+        transform .12s ease,
+        background .15s ease,
+        color .15s ease;
+      user-select: none;
     }
 
     .tags span:hover {
       transform: scale(0.98);
+    }
+
+    /* クリック時アニメ */
+    .tags span.tap {
+      transform: scale(0.96);
     }
 
     /* ライトモード active */
@@ -65,13 +74,12 @@
       color: #ffffff;
     }
 
-    /* ダークモード 通常 */
+    /* ダークモード */
     body.dark .tags span {
       background: #334155;
       color: #e5e7eb;
     }
 
-    /* ダークモード active（重要） */
     body.dark .tags span.active {
       background: #3b82f6;
       color: #ffffff;
@@ -203,6 +211,10 @@
       if (selectedSponsors.includes(name)) span.classList.add("active");
 
       span.onclick = () => {
+        // 🔥 クリックアニメ
+        span.classList.add("tap");
+        setTimeout(() => span.classList.remove("tap"), 120);
+
         selectedSponsors = selectedSponsors.includes(name)
           ? selectedSponsors.filter(s => s !== name)
           : [...selectedSponsors, name];
