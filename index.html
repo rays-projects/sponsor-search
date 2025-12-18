@@ -42,15 +42,21 @@
       box-shadow: none;
     }
 
+    /* ===== タグ ===== */
     .tags span {
       display: inline-block;
       background: #e0e7ff;
       color: #1e3a8a;
-      padding: 4px 8px;
+      padding: 4px 10px;
       margin: 4px;
-      border-radius: 6px;
+      border-radius: 999px;
       cursor: pointer;
       font-size: 13px;
+      transition: background .15s, color .15s, box-shadow .15s;
+    }
+
+    .tags span:hover {
+      background: #c7d2fe;
     }
 
     body.dark .tags span {
@@ -58,14 +64,27 @@
       color: #e5e7eb;
     }
 
+    body.dark .tags span:hover {
+      background: #475569;
+    }
+
+    /* ★ 選択中（ここを強化） */
     .tags span.active {
       background: #2563eb;
-      color: #fff;
+      color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(37,99,235,.35);
+    }
+
+    body.dark .tags span.active {
+      background: #3b82f6;
+      color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(147,197,253,.4);
     }
 
     .selected {
       margin-top: 8px;
       font-size: 14px;
+      opacity: .9;
     }
 
     .program {
@@ -165,13 +184,18 @@
   /* ===== タグ生成 ===== */
   function renderTags() {
     const tagArea = document.getElementById("tagArea");
-    const sponsors = [...new Set(allData.flatMap(p => [p.sponsor1, p.sponsor2, p.sponsor3]).filter(s => s && s !== "-"))];
+    const sponsors = [...new Set(
+      allData.flatMap(p => [p.sponsor1, p.sponsor2, p.sponsor3])
+        .filter(s => s && s !== "-")
+    )];
 
     tagArea.innerHTML = "";
     sponsors.forEach(name => {
       const span = document.createElement("span");
       span.textContent = name;
-      if (selectedSponsors.includes(name)) span.classList.add("active");
+      if (selectedSponsors.includes(name)) {
+        span.classList.add("active");
+      }
 
       span.onclick = () => {
         if (selectedSponsors.includes(name)) {
@@ -187,9 +211,10 @@
       tagArea.appendChild(span);
     });
 
-    document.getElementById("selectedInfo").textContent = selectedSponsors.length
-      ? `選択中スポンサー：${selectedSponsors.join(" / ")}`
-      : "スポンサー未選択";
+    document.getElementById("selectedInfo").textContent =
+      selectedSponsors.length
+        ? `選択中スポンサー：${selectedSponsors.join(" / ")}`
+        : "スポンサー未選択";
   }
 
   /* ===== 結果描画 ===== */
@@ -199,7 +224,9 @@
 
     if (selectedSponsors.length) {
       filtered = allData.filter(p =>
-        selectedSponsors.some(s => [p.sponsor1, p.sponsor2, p.sponsor3].includes(s))
+        selectedSponsors.some(s =>
+          [p.sponsor1, p.sponsor2, p.sponsor3].includes(s)
+        )
       );
     }
 
